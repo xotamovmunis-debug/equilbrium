@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo, useRef, useCallback } from "react";
    EQUILIBRIUM — AP Micro & Macro
    Routes: #/  #/micro  #/macro  #/micro/3  #/tutor  #/admin
    Admin is unlinked. Reach it with #/admin or Ctrl/Cmd+Shift+A.
-   Storage: eq:bank (shared) · eq:stats (shared) · eq:me (private)
+   Data lives in Supabase. Student progress and theme live in localStorage.
    ============================================================ */
 
 const UNITS = {
@@ -29,18 +29,12 @@ const SNAME = { micro: "Microeconomics", macro: "Macroeconomics" };
 const SSHORT = { micro: "Micro", macro: "Macro" };
 const L = ["A", "B", "C", "D", "E", "F"];
 
-const K_BANK = "eq:bank", K_STATS = "eq:stats", K_ME = "eq:me";
-
-async function sGet(key, shared) {
-  try {
-    const r = await window.storage.get(key, shared);
-    if (!r || !r.value) return null;
-    return typeof r.value === "string" ? JSON.parse(r.value) : r.value;
-  } catch { return null; }
-}
-async function sSet(key, value, shared) {
-  try { await window.storage.set(key, JSON.stringify(value), shared); return true; } catch { return false; }
-}
+import { supabase } from "./db";
+import {
+  configured, loadBank, upsertQuestions, deleteQuestion, upsertMaterial, deleteMaterial,
+  saveBands, recordSessionRow, loadSessions, signIn, signOut, getSession, askTutor,
+  loadMe, saveMe,
+} from "./db";
 
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 const shuffle = (a) => { const x = [...a]; for (let i = x.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [x[i], x[j]] = [x[j], x[i]]; } return x; };
@@ -114,15 +108,7 @@ function buildMock(questions, subject) {
   return shuffle(out).slice(0, target);
 }
 
-async function askClaude(messages, system, maxTokens = 1200) {
-  const res = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST", headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ model: "claude-sonnet-4-6", max_tokens: maxTokens, system, messages }),
-  });
-  if (!res.ok) throw new Error("request failed");
-  const d = await res.json();
-  return (d.content || []).filter((b) => b.type === "text").map((b) => b.text).join("\n").trim();
-}
+const askClaude = (messages, system, maxTokens = 1200) => askTutor(messages, system, maxTokens);
 
 /* ---------------------------- styles ---------------------------- */
 
@@ -585,9 +571,8 @@ function Prose({ text }) {
    APP
    ============================================================ */
 
-function parseHash() {
-  const h = (window.location.hash || "").replace(/^#\/?/, "").toLowerCase();
-  const p = h.split("/").filter(Boolean);
+function parseRoute() {
+  const p = (window.location.pathname || "/").toLowerCase().split("/").filter(Boolean);
   if (p[0] === "tutor") return { v: "tutor" };
   if (p[0] === "admin") return { v: "admin" };
   if (p[0] === "micro" || p[0] === "macro") {
@@ -599,25 +584,26 @@ function parseHash() {
 }
 
 export default function App() {
-  const [route, setRoute] = useState(parseHash);
+  const [route, setRoute] = useState(parseRoute);
   const [bank, setBank] = useState(null);
-  const [stats, setStats] = useState({ byQ: {}, sessions: [] });
   const [me, setMe] = useState({ unit: {}, theme: "dark" });
   const [ready, setReady] = useState(false);
 
   const go = useCallback((r) => {
     setRoute(r);
-    const hash = r.v === "home" ? "#/" : r.v === "course" ? `#/${r.subject}`
-      : r.v === "unit" ? `#/${r.subject}/${r.unit}` : r.v === "tutor" ? "#/tutor"
-        : r.v === "admin" ? "#/admin" : null;
-    if (hash) { try { window.location.hash = hash; } catch { /* sandboxed */ } }
+    const path = r.v === "home" ? "/" : r.v === "course" ? `/${r.subject}`
+      : r.v === "unit" ? `/${r.subject}/${r.unit}` : r.v === "tutor" ? "/tutor"
+        : r.v === "admin" ? "/admin" : null;
+    /* Practice, mock and result screens carry state in memory, so they
+       deliberately leave the URL on the page the student came from. */
+    if (path && path !== window.location.pathname) window.history.pushState(null, "", path);
     window.scrollTo(0, 0);
   }, []);
 
   useEffect(() => {
-    const h = () => setRoute(parseHash());
-    window.addEventListener("hashchange", h);
-    return () => window.removeEventListener("hashchange", h);
+    const h = () => setRoute(parseRoute());
+    window.addEventListener("popstate", h);
+    return () => window.removeEventListener("popstate", h);
   }, []);
 
   useEffect(() => {
@@ -628,39 +614,49 @@ export default function App() {
     return () => window.removeEventListener("keydown", k);
   }, [go]);
 
+  const [loadError, setLoadError] = useState("");
+
   useEffect(() => {
     (async () => {
-      const b = (await sGet(K_BANK, true)) || {};
-      setBank({
-        questions: Array.isArray(b.questions) ? b.questions : [],
-        materials: Array.isArray(b.materials) ? b.materials : [],
-        pin: b.pin || "2626",
-        bands: b.bands || DEFAULT_BANDS,
-      });
-      setStats((await sGet(K_STATS, true)) || { byQ: {}, sessions: [] });
-      const m = (await sGet(K_ME, false)) || {};
-      setMe({ unit: m.unit || {}, theme: m.theme === "light" ? "light" : "dark" });
+      setMe(loadMe());
+      if (!configured) { setLoadError("config"); setBank({ questions: [], materials: [], bands: DEFAULT_BANDS }); setReady(true); return; }
+      try {
+        const b = await loadBank();
+        setBank({ questions: b.questions, materials: b.materials, bands: b.bands || DEFAULT_BANDS });
+      } catch {
+        setLoadError("network");
+        setBank({ questions: [], materials: [], bands: DEFAULT_BANDS });
+      }
       setReady(true);
     })();
   }, []);
 
   const toggleTheme = useCallback(() => {
-    setMe((p) => { const n = { ...p, theme: p.theme === "light" ? "dark" : "light" }; sSet(K_ME, n, false); return n; });
+    setMe((p) => { const n = { ...p, theme: p.theme === "light" ? "dark" : "light" }; saveMe(n); return n; });
   }, []);
 
-  const saveBank = useCallback(async (next) => { setBank(next); await sSet(K_BANK, next, true); }, []);
+  const refreshBank = useCallback(async () => {
+    const b = await loadBank();
+    setBank((p) => ({ ...p, questions: b.questions, materials: b.materials, bands: b.bands || DEFAULT_BANDS }));
+  }, []);
 
   const recordSession = useCallback(async (s) => {
-    const byQ = { ...stats.byQ };
-    s.items.forEach((it) => { const c = byQ[it.id] || { a: 0, c: 0 }; byQ[it.id] = { a: c.a + 1, c: c.c + (it.correct ? 1 : 0) }; });
-    const sessions = [{ ts: Date.now(), subject: s.subject, unit: s.unit, total: s.items.length, correct: s.items.filter((i) => i.correct).length, secs: s.secs }, ...stats.sessions].slice(0, 200);
-    const ns = { byQ, sessions }; setStats(ns); sSet(K_STATS, ns, true);
+    const answers = s.items.map((it) => ({ qid: it.id, picked: it.picked, correct: it.correct }));
+    const correct = s.items.filter((i) => i.correct).length;
+    try {
+      await recordSessionRow({
+        subject: s.subject, unit: s.unit, mode: s.mode || "practice",
+        total: s.items.length, correct, secs: s.secs, answers,
+      });
+    } catch { /* a dropped result must never block the student */ }
+
     const unit = { ...(me.unit || {}) };
     const key = `${s.subject}-${s.unit}`;
     const cur = unit[key] || { a: 0, c: 0 };
-    unit[key] = { a: cur.a + s.items.length, c: cur.c + s.items.filter((i) => i.correct).length };
-    const nm = { ...me, unit }; setMe(nm); sSet(K_ME, nm, false);
-  }, [stats, me]);
+    unit[key] = { a: cur.a + s.items.length, c: cur.c + correct };
+    const nm = { ...me, unit };
+    setMe(nm); saveMe(nm);
+  }, [me]);
 
   if (!ready) return <div className="eq"><style>{CSS}</style><div className="wrap z" style={{ paddingTop: 90, color: "var(--tx3)" }}><span className="spin" /> Loading</div></div>;
 
@@ -671,6 +667,15 @@ export default function App() {
     <div className={"eq" + (me.theme === "light" ? " light" : "")} style={{ "--accent": accent }}>
       <style>{CSS}</style>
       <div className="z">
+        {loadError && (
+          <div className="wrap" style={{ paddingTop: 16 }}>
+            <div className="note" style={{ borderLeftColor: "var(--no)" }}>
+              {loadError === "config"
+                ? "The database is not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY and redeploy."
+                : "Could not reach the database, so lessons and questions are not loading. Refresh in a moment."}
+            </div>
+          </div>
+        )}
         {route.v === "home" && <Home bank={bank} me={me} nav={nav} />}
         {route.v === "course" && <Course subject={route.subject} bank={bank} me={me} nav={nav} />}
         {route.v === "unit" && <UnitPage subject={route.subject} unit={route.unit} bank={bank} me={me} nav={nav} />}
@@ -679,7 +684,7 @@ export default function App() {
         {route.v === "mock" && <Mock {...route} go={go} onFinish={recordSession} />}
         {route.v === "mockresult" && <MockResult {...route} bands={bank.bands} nav={nav} />}
         {route.v === "tutor" && <Tutor nav={nav} />}
-        {route.v === "admin" && <Admin bank={bank} saveBank={saveBank} stats={stats} setStats={setStats} go={go} />}
+        {route.v === "admin" && <Admin bank={bank} setBank={setBank} refreshBank={refreshBank} go={go} />}
       </div>
     </div>
   );
@@ -1098,7 +1103,7 @@ function Mock({ subject, pool, go, onFinish }) {
     doneRef.current = true;
     const items = pool.map((x) => ({ id: x.id, picked: ans[x.id] ?? null, correct: ans[x.id] === x.answer, q: x }));
     const secs = Math.min(4200, pool.length * 70) - left;
-    onFinish({ subject, unit: 0, items: items.filter((i) => i.picked !== null), secs });
+    onFinish({ subject, unit: 0, mode: "mock", items: items.filter((i) => i.picked !== null), secs });
     go({ v: "mockresult", subject, items, secs });
   }, [pool, ans, left, subject, onFinish, go]);
 
@@ -1375,20 +1380,59 @@ function Tutor({ nav }) {
 const BLANK_Q = { id: "", subject: "micro", unit: 1, difficulty: "medium", stem: "", choices: ["", "", "", "", ""], answer: 0, explanation: "" };
 const BLANK_M = { id: "", subject: "micro", unit: 1, kind: "note", title: "", body: "", url: "" };
 
-function Admin({ bank, saveBank, stats, setStats, go }) {
+function Admin({ bank, setBank, refreshBank, go }) {
   const [authed, setAuthed] = useState(false);
-  const [pin, setPin] = useState(""), [err, setErr] = useState(""), [tab, setTab] = useState("materials");
-  const tryIn = () => { if (pin === (bank.pin || "2626")) { setAuthed(true); setErr(""); } else setErr("That code doesn't match."); };
+  const [checking, setChecking] = useState(true);
+  const [email, setEmail] = useState(""), [pw, setPw] = useState("");
+  const [err, setErr] = useState(""), [busy, setBusy] = useState(false);
+  const [tab, setTab] = useState("materials");
+  const [stats, setStats] = useState({ byQ: {}, sessions: [] });
+
+  useEffect(() => {
+    (async () => {
+      const { data } = await getSession();
+      setAuthed(Boolean(data?.session));
+      setChecking(false);
+    })();
+  }, []);
+
+  /* Sessions are readable only by an admin, so they load after sign in. */
+  const loadStats = useCallback(async () => {
+    try {
+      const rows = await loadSessions();
+      const byQ = {};
+      rows.forEach((r) => (r.answers || []).forEach((a) => {
+        const c = byQ[a.qid] || { a: 0, c: 0 };
+        byQ[a.qid] = { a: c.a + 1, c: c.c + (a.correct ? 1 : 0) };
+      }));
+      setStats({ byQ, sessions: rows.map((r) => ({ ts: new Date(r.created_at).getTime(), ...r })) });
+    } catch { /* leave the panel empty rather than breaking it */ }
+  }, []);
+
+  useEffect(() => { if (authed) loadStats(); }, [authed, loadStats]);
+
+  const tryIn = async () => {
+    setBusy(true); setErr("");
+    try { await signIn(email.trim(), pw); setAuthed(true); }
+    catch (e) { setErr(e.message === "Invalid login credentials" ? "That email and password don't match." : e.message || "Could not sign in."); }
+    setBusy(false);
+  };
+
+  if (checking) return <div className="wrap" style={{ paddingTop: 90, color: "var(--tx3)" }}><span className="spin" /> Checking</div>;
 
   if (!authed) return (
     <div className="wrap" style={{ maxWidth: 400, paddingTop: 90 }}>
       <Mark size={34} />
       <h1 style={{ fontSize: 28, margin: "22px 0 8px" }}>Console</h1>
-      <p style={{ color: "var(--tx3)", fontSize: 14, marginTop: 0, marginBottom: 24 }}>Enter the access code to manage lessons, questions, and results.</p>
-      <label className="field"><span>Access code</span>
-        <input type="password" value={pin} autoFocus onChange={(e) => { setPin(e.target.value); setErr(""); }} onKeyDown={(e) => e.key === "Enter" && tryIn()} /></label>
+      <p style={{ color: "var(--tx3)", fontSize: 14, marginTop: 0, marginBottom: 24 }}>Sign in to manage lessons, questions, and results.</p>
+      <label className="field"><span>Email</span>
+        <input type="text" value={email} autoFocus autoComplete="username"
+          onChange={(e) => { setEmail(e.target.value); setErr(""); }} /></label>
+      <label className="field"><span>Password</span>
+        <input type="password" value={pw} autoComplete="current-password"
+          onChange={(e) => { setPw(e.target.value); setErr(""); }} onKeyDown={(e) => e.key === "Enter" && tryIn()} /></label>
       {err && <div style={{ color: "var(--no)", fontSize: 13, marginBottom: 14 }}>{err}</div>}
-      <button className="btn" onClick={tryIn}>Sign in</button>
+      <button className="btn" onClick={tryIn} disabled={busy || !email || !pw}>{busy ? <><span className="spin" /> Signing in</> : "Sign in"}</button>
       <button className="btn ghost" style={{ marginLeft: 10 }} onClick={() => go({ v: "home" })}>Back to site</button>
     </div>
   );
@@ -1397,32 +1441,39 @@ function Admin({ bank, saveBank, stats, setStats, go }) {
     <div className="wrap">
       <div className="navin" style={{ borderBottom: "1px solid var(--line)" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}><Mark size={24} /><span className="wm" style={{ fontSize: 17 }}>Console</span></div>
-        <button className="mini" onClick={() => go({ v: "home" })}>View site</button>
+        <span style={{ display: "flex", gap: 8 }}>
+          <button className="mini" onClick={() => go({ v: "home" })}>View site</button>
+          <button className="mini" onClick={async () => { await signOut(); setAuthed(false); }}>Sign out</button>
+        </span>
       </div>
       <div className="atabs">
         {[["materials", "Lessons"], ["questions", "Questions"], ["generate", "Write with AI"], ["results", "Results"], ["settings", "Settings"]].map(([k, v]) => (
           <button key={k} className={"atab" + (tab === k ? " on" : "")} onClick={() => setTab(k)}>{v}</button>
         ))}
       </div>
-      {tab === "materials" && <AMaterials bank={bank} saveBank={saveBank} />}
-      {tab === "questions" && <AQuestions bank={bank} saveBank={saveBank} stats={stats} />}
-      {tab === "generate" && <AGenerate bank={bank} saveBank={saveBank} />}
-      {tab === "results" && <AResults bank={bank} stats={stats} />}
-      {tab === "settings" && <ASettings bank={bank} saveBank={saveBank} setStats={setStats} />}
+      {tab === "materials" && <AMaterials bank={bank} refreshBank={refreshBank} />}
+      {tab === "questions" && <AQuestions bank={bank} refreshBank={refreshBank} stats={stats} />}
+      {tab === "generate" && <AGenerate bank={bank} refreshBank={refreshBank} />}
+      {tab === "results" && <AResults bank={bank} stats={stats} reload={loadStats} />}
+      {tab === "settings" && <ASettings bank={bank} setBank={setBank} refreshBank={refreshBank} reload={loadStats} />}
       <div style={{ height: 60 }} />
     </div>
   );
 }
 
-function AMaterials({ bank, saveBank }) {
+function AMaterials({ bank, refreshBank }) {
   const [fs, setFs] = useState("all"), [fu, setFu] = useState("all");
   const [editing, setEditing] = useState(null);
   const list = bank.materials.filter((m) => (fs === "all" || m.subject === fs) && (fu === "all" || String(m.unit) === fu));
 
-  const save = (m) => {
-    const has = bank.materials.some((x) => x.id === m.id);
-    saveBank({ ...bank, materials: has ? bank.materials.map((x) => (x.id === m.id ? m : x)) : [...bank.materials, m] });
-    setEditing(null);
+  const [err, setErr] = useState("");
+  const save = async (m) => {
+    try { await upsertMaterial(m); await refreshBank(); setEditing(null); setErr(""); }
+    catch (e) { setErr(e.message || "Could not save. Are you still signed in?"); }
+  };
+  const remove = async (id) => {
+    if (!window.confirm("Delete this lesson?")) return;
+    try { await deleteMaterial(id); await refreshBank(); } catch (e) { setErr(e.message || "Could not delete."); }
   };
 
   if (editing) return <MForm m={editing} onSave={save} onCancel={() => setEditing(null)} />;
@@ -1452,7 +1503,7 @@ function AMaterials({ bank, saveBank }) {
               <span><b style={{ fontWeight: 600 }}>{m.title}</b> <span className="st" style={{ marginLeft: 8 }}>{m.kind}</span></span>
               <span style={{ display: "flex", gap: 8 }}>
                 <button className="mini" onClick={() => setEditing(m)}>Edit</button>
-                <button className="mini danger" onClick={() => { if (window.confirm("Delete this lesson?")) saveBank({ ...bank, materials: bank.materials.filter((x) => x.id !== m.id) }); }}>Delete</button>
+                <button className="mini danger" onClick={() => remove(m.id)}>Delete</button>
               </span>
             </div>
           ))}
@@ -1516,17 +1567,21 @@ Cover the definitions, the graph or graphs involved (name axes and curves), the 
   );
 }
 
-function AQuestions({ bank, saveBank, stats }) {
+function AQuestions({ bank, refreshBank, stats }) {
   const [fs, setFs] = useState("all"), [fu, setFu] = useState("all"), [search, setSearch] = useState("");
   const [editing, setEditing] = useState(null);
   const list = useMemo(() => bank.questions.filter((q) =>
     (fs === "all" || q.subject === fs) && (fu === "all" || String(q.unit) === fu) &&
     (!search || (q.stem + q.explanation).toLowerCase().includes(search.toLowerCase()))), [bank.questions, fs, fu, search]);
 
-  const save = (q) => {
-    const has = bank.questions.some((x) => x.id === q.id);
-    saveBank({ ...bank, questions: has ? bank.questions.map((x) => (x.id === q.id ? q : x)) : [...bank.questions, q] });
-    setEditing(null);
+  const [err, setErr] = useState("");
+  const save = async (q) => {
+    try { await upsertQuestions([q]); await refreshBank(); setEditing(null); setErr(""); }
+    catch (e) { setErr(e.message || "Could not save. Are you still signed in?"); }
+  };
+  const remove = async (id) => {
+    if (!window.confirm("Delete this question?")) return;
+    try { await deleteQuestion(id); await refreshBank(); } catch (e) { setErr(e.message || "Could not delete."); }
   };
   if (editing) return <QForm q={editing} onSave={save} onCancel={() => setEditing(null)} />;
 
@@ -1560,7 +1615,7 @@ function AQuestions({ bank, saveBank, stats }) {
                   <span className="st num">{st ? `${pct(st.c, st.a)}% of ${st.a}` : "no data"}</span>
                   <button className="mini" onClick={() => setEditing(q)}>Edit</button>
                   <button className="mini" onClick={() => setEditing({ ...q, id: uid() })}>Copy</button>
-                  <button className="mini danger" onClick={() => { if (window.confirm("Delete this question?")) saveBank({ ...bank, questions: bank.questions.filter((x) => x.id !== q.id) }); }}>Delete</button>
+                  <button className="mini danger" onClick={() => remove(q.id)}>Delete</button>
                 </span>
               </div>
             );
@@ -1615,7 +1670,7 @@ function QForm({ q, onSave, onCancel }) {
   );
 }
 
-function AGenerate({ bank, saveBank }) {
+function AGenerate({ bank, refreshBank }) {
   const [subject, setSubject] = useState("micro"), [unit, setUnit] = useState(1);
   const [difficulty, setDifficulty] = useState("medium"), [count, setCount] = useState(5);
   const [topic, setTopic] = useState(""), [busy, setBusy] = useState(false);
@@ -1646,9 +1701,11 @@ Return ONLY JSON, no prose and no code fences:
     setBusy(false);
   };
 
-  const keepAll = () => {
+  const keepAll = async () => {
     const add = drafts.filter((d) => d._keep).map(({ _keep, ...q }) => q);
-    if (add.length) { saveBank({ ...bank, questions: [...bank.questions, ...add] }); setDrafts([]); }
+    if (!add.length) return;
+    try { await upsertQuestions(add); await refreshBank(); setDrafts([]); }
+    catch (e) { setErr(e.message || "Could not save these. Are you still signed in?"); }
   };
 
   return (
@@ -1703,7 +1760,7 @@ Return ONLY JSON, no prose and no code fences:
   );
 }
 
-function AResults({ bank, stats }) {
+function AResults({ bank, stats, reload }) {
   const totals = useMemo(() => { let a = 0, c = 0; Object.values(stats.byQ).forEach((v) => { a += v.a; c += v.c; }); return { a, c }; }, [stats.byQ]);
   const unitRows = (s) => UNITS[s].map((u) => {
     let a = 0, c = 0;
@@ -1762,10 +1819,14 @@ function AResults({ bank, stats }) {
   );
 }
 
-function ASettings({ bank, saveBank, setStats }) {
-  const [np, setNp] = useState(""), [io, setIo] = useState(""), [msg, setMsg] = useState("");
+function ASettings({ bank, refreshBank, reload }) {
+  const [io, setIo] = useState(""), [msg, setMsg] = useState(""), [busy, setBusy] = useState(false);
+  const [bands, setBandsLocal] = useState(bank.bands || DEFAULT_BANDS);
+
   const exportAll = () => setIo(JSON.stringify({ questions: bank.questions, materials: bank.materials }, null, 2));
-  const importAll = () => {
+
+  const importAll = async () => {
+    setBusy(true);
     try {
       const raw = JSON.parse(io);
       const qArr = Array.isArray(raw) ? raw : raw.questions || [];
@@ -1782,68 +1843,80 @@ function ASettings({ bank, saveBank, setStats }) {
         id: m.id || uid(), subject: m.subject === "macro" ? "macro" : "micro",
         unit: Math.min(6, Math.max(1, Number(m.unit) || 1)),
         kind: ["note", "formula", "link"].includes(m.kind) ? m.kind : "note",
-        title: String(m.title), body: String(m.body || ""), url: String(m.url || ""),
+        title: String(m.title), body: String(m.body || ""), url: String(m.url || ""), position: 0,
       }));
-      if (!qs.length && !ms.length) throw new Error();
-      const qm = new Map(bank.questions.map((q) => [q.id, q])); qs.forEach((q) => qm.set(q.id, q));
-      const mm = new Map(bank.materials.map((m) => [m.id, m])); ms.forEach((m) => mm.set(m.id, m));
-      saveBank({ ...bank, questions: [...qm.values()], materials: [...mm.values()] });
+      if (!qs.length && !ms.length) throw new Error("empty");
+      if (qs.length) await upsertQuestions(qs);
+      for (const m of ms) await upsertMaterial(m);
+      await refreshBank();
       setMsg(`Imported ${qs.length} questions and ${ms.length} lessons.`);
-    } catch { setMsg("That is not valid. Export first to see the shape."); }
+    } catch (e) {
+      setMsg(e.message === "empty" ? "Nothing usable in there. Export first to see the shape." : e.message || "Import failed.");
+    }
+    setBusy(false);
   };
+
+  const setBand = (s, k, v) => setBandsLocal((p) => ({ ...p, [s]: { ...p[s], [k]: v } }));
+
+  const commitBands = async (next) => {
+    try { await saveBands(next); await refreshBank(); setMsg("Cutoffs saved."); }
+    catch (e) { setMsg(e.message || "Could not save the cutoffs."); }
+  };
+
   return (
     <div style={{ maxWidth: 660 }}>
-      <div className="sechead" style={{ marginTop: 0 }}>Access code</div>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 12, alignItems: "end" }}>
-        <label className="field" style={{ margin: 0 }}><span>New code</span>
-          <input type="text" value={np} onChange={(e) => setNp(e.target.value)} /></label>
-        <button className="btn sm" disabled={np.length < 3} onClick={() => { saveBank({ ...bank, pin: np }); setNp(""); setMsg("Access code updated."); }}>Update</button>
+      <div className="note" style={{ marginTop: 0 }}>
+        Admin accounts live in the Supabase dashboard under Authentication → Users. Add a teacher there to give them this
+        console, remove them there to take it away, and change passwords in the same place.
       </div>
-      <div className="sechead">Mock exam score cutoffs</div>
+
+      <div className="sechead" style={{ marginTop: 0 }}>Mock exam score cutoffs</div>
       <p style={{ fontSize: 13.5, color: "var(--tx3)", marginTop: 0, marginBottom: 14 }}>
         Composite is out of 90: 60 points of multiple choice plus 30 scaled from the free-response section.
         College Board sets the raw-to-score conversion after each administration and never publishes it in advance,
         so these are estimates from released exams and recent score distributions. Change them when better data lands.
       </p>
-      {["micro", "macro"].map((s) => {
-        const b = (bank.bands || DEFAULT_BANDS)[s];
-        return (
-          <div key={s} style={{ marginBottom: 16 }}>
-            <div style={{ fontSize: 13, color: "var(--tx2)", marginBottom: 8 }}>AP {SNAME[s]} — minimum composite for each score</div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 10 }}>
-              {[["five", 5], ["four", 4], ["three", 3], ["two", 2]].map(([k, label]) => (
-                <label key={k} className="field" style={{ margin: 0 }}>
-                  <span>Score {label}</span>
-                  <input type="text" inputMode="numeric" value={b[k]}
-                    onChange={(e) => {
-                      const v = Math.max(0, Math.min(90, Number(e.target.value.replace(/\D/g, "")) || 0));
-                      const bands = { ...(bank.bands || DEFAULT_BANDS) };
-                      bands[s] = { ...bands[s], [k]: v };
-                      saveBank({ ...bank, bands });
-                    }} />
-                </label>
-              ))}
-            </div>
+      {["micro", "macro"].map((s) => (
+        <div key={s} style={{ marginBottom: 16 }}>
+          <div style={{ fontSize: 13, color: "var(--tx2)", marginBottom: 8 }}>AP {SNAME[s]} — minimum composite for each score</div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 10 }}>
+            {[["five", 5], ["four", 4], ["three", 3], ["two", 2]].map(([k, label]) => (
+              <label key={k} className="field" style={{ margin: 0 }}>
+                <span>Score {label}</span>
+                <input type="text" inputMode="numeric" value={bands[s][k]}
+                  onChange={(e) => setBand(s, k, Math.max(0, Math.min(90, Number(e.target.value.replace(/\D/g, "")) || 0)))} />
+              </label>
+            ))}
           </div>
-        );
-      })}
-      <button className="btn sm ghost" onClick={() => { saveBank({ ...bank, bands: DEFAULT_BANDS }); setMsg("Cutoffs reset to the defaults."); }}>Reset cutoffs</button>
+        </div>
+      ))}
+      <div className="actions" style={{ marginTop: 4 }}>
+        <button className="btn sm" onClick={() => commitBands(bands)}>Save cutoffs</button>
+        <button className="btn sm ghost" onClick={() => { setBandsLocal(DEFAULT_BANDS); commitBands(DEFAULT_BANDS); }}>Reset to defaults</button>
+      </div>
 
       <div className="sechead">Import and export</div>
       <p style={{ fontSize: 13.5, color: "var(--tx3)", marginTop: 0 }}>Covers questions and lessons together. Matching ids are replaced, new ids are added.</p>
       <textarea rows={9} value={io} onChange={(e) => setIo(e.target.value)} placeholder='{"questions":[…],"materials":[…]}' />
       <div className="actions" style={{ marginTop: 12 }}>
         <button className="btn sm ghost" onClick={exportAll}>Export everything</button>
-        <button className="btn sm" onClick={importAll} disabled={!io.trim()}>Import</button>
+        <button className="btn sm" onClick={importAll} disabled={!io.trim() || busy}>{busy ? <><span className="spin" /> Importing</> : "Import"}</button>
       </div>
-      <div className="sechead">Data</div>
-      <button className="btn sm ghost" onClick={() => {
-        if (!window.confirm("Clear all student results? Lessons and questions are kept.")) return;
-        const e = { byQ: {}, sessions: [] }; setStats(e); sSet(K_STATS, e, true); setMsg("Results cleared.");
-      }}>Clear student results</button>
+
+      <div className="sechead">Student results</div>
+      <div className="actions" style={{ marginTop: 0 }}>
+        <button className="btn sm ghost" onClick={reload}>Reload results</button>
+        <button className="btn sm ghost" onClick={async () => {
+          if (!window.confirm("Delete every recorded result? Lessons and questions are kept.")) return;
+          try { await supabase.from("sessions").delete().neq("id", "00000000-0000-0000-0000-000000000000"); await reload(); setMsg("Results cleared."); }
+          catch (e) { setMsg(e.message || "Could not clear results."); }
+        }}>Clear all results</button>
+      </div>
+
       {msg && <div className="note" style={{ marginTop: 22 }}>{msg}</div>}
       <div className="note" style={{ marginTop: 16 }}>
-        The console has no link anywhere on the site. Reach it at #/admin, or with Ctrl+Shift+A. This gate hides the panel in the browser but is not server-side security — put a real login in front of it before launch.
+        The console is not linked anywhere on the site. Reach it at /admin, or with Ctrl+Shift+A. Access is enforced by
+        Supabase row level security, so a visitor who finds this page still cannot read or change anything without an account.
       </div>
     </div>
   );

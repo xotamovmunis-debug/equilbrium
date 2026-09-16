@@ -523,9 +523,20 @@ function HeroPlot() {
   const Q = ((ex - X0) / (X1 - X0)) * 100;
   const P = ((Y1 - ey) / (Y1 - Y0)) * 100;
 
+  /* The demand line keeps its length as it slides, so it is clipped to the
+     plot area. The D label rides the line and is clamped to stay inside. */
+  const dSlope = (302 - 62) / (500 - (X0 + 8));
+  const labelX = Math.max(X0 + 30, Math.min(X1 + 8, 500 + dx));
+  const labelY = Math.min(Y1 + 2, 62 + dSlope * (labelX - dx - X0 - 8));
+
   return (
     <div className="plotbox">
       <svg ref={svgRef} viewBox="0 0 600 330" role="img" aria-label="Supply and demand curves meeting at equilibrium">
+        <defs>
+          <clipPath id="plotclip">
+            <rect x={X0} y={Y0 - 14} width={X1 + 12 - X0} height={Y1 + 8 - (Y0 - 14)} />
+          </clipPath>
+        </defs>
         <g stroke="var(--pgrid)" strokeWidth="1">
           {[0, 1, 2, 3, 4, 5].map((i) => <line key={"h" + i} x1={X0} y1={Y0 + i * 50} x2={X1 + 20} y2={Y0 + i * 50} />)}
           {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => <line key={"v" + i} x1={X0 + i * 62} y1={Y0 - 10} x2={X0 + i * 62} y2={Y1 + 8} />)}
@@ -536,12 +547,14 @@ function HeroPlot() {
         <text x={X1 + 34} y={Y1 + 13} fill="var(--tx3)" fontSize="12" fontFamily="JetBrains Mono">Q</text>
         <line x1={X0 + 8} y1="286" x2="540" y2="60" stroke="var(--macro)" strokeWidth="2.6" strokeLinecap="round" />
         <text x="546" y="58" fill="var(--macro)" fontSize="13" fontWeight="600" fontFamily="JetBrains Mono">S</text>
-        <g transform={`translate(${dx},0)`} className="grab" tabIndex={0} role="slider"
+        <g className="grab" tabIndex={0} role="slider"
           aria-label="Drag the demand curve" aria-valuemin={-72} aria-valuemax={72} aria-valuenow={Math.round(dx)}
           onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp} onKeyDown={onKey}>
-          <line x1={X0 + 8} y1="62" x2="500" y2="302" stroke="transparent" strokeWidth="30" strokeLinecap="round" />
-          <line x1={X0 + 8} y1="62" x2="500" y2="302" stroke="var(--micro)" strokeWidth="2.6" strokeLinecap="round" />
-          <text x="506" y="304" fill="var(--micro)" fontSize="13" fontWeight="600" fontFamily="JetBrains Mono">D</text>
+          <g clipPath="url(#plotclip)" transform={`translate(${dx},0)`}>
+            <line x1={X0 + 8} y1="62" x2="500" y2="302" stroke="transparent" strokeWidth="30" strokeLinecap="round" />
+            <line x1={X0 + 8} y1="62" x2="500" y2="302" stroke="var(--micro)" strokeWidth="2.6" strokeLinecap="round" />
+          </g>
+          <text x={labelX + 8} y={labelY + 2} fill="var(--micro)" fontSize="13" fontWeight="600" fontFamily="JetBrains Mono">D</text>
         </g>
         <line x1={X0} y1={ey} x2={ex} y2={ey} stroke="var(--paxis)" strokeWidth="1" strokeDasharray="3 4" />
         <line x1={ex} y1={ey} x2={ex} y2={Y1 + 8} stroke="var(--paxis)" strokeWidth="1" strokeDasharray="3 4" />

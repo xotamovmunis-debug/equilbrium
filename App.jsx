@@ -550,9 +550,13 @@ function HeroPlot() {
         <g className="grab" tabIndex={0} role="slider"
           aria-label="Drag the demand curve" aria-valuemin={-72} aria-valuemax={72} aria-valuenow={Math.round(dx)}
           onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp} onKeyDown={onKey}>
-          <g clipPath="url(#plotclip)" transform={`translate(${dx},0)`}>
-            <line x1={X0 + 8} y1="62" x2="500" y2="302" stroke="transparent" strokeWidth="30" strokeLinecap="round" />
-            <line x1={X0 + 8} y1="62" x2="500" y2="302" stroke="var(--micro)" strokeWidth="2.6" strokeLinecap="round" />
+          {/* The clip must sit on an outer group: a clip-path on the same
+              element as the transform would slide along with the line. */}
+          <g clipPath="url(#plotclip)">
+            <g transform={`translate(${dx},0)`}>
+              <line x1={X0 + 8} y1="62" x2="500" y2="302" stroke="transparent" strokeWidth="30" strokeLinecap="round" />
+              <line x1={X0 + 8} y1="62" x2="500" y2="302" stroke="var(--micro)" strokeWidth="2.6" strokeLinecap="round" />
+            </g>
           </g>
           <text x={labelX + 8} y={labelY + 2} fill="var(--micro)" fontSize="13" fontWeight="600" fontFamily="JetBrains Mono">D</text>
         </g>

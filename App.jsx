@@ -161,14 +161,14 @@ const CSS = `
   transition:background .25s,color .25s;
 }
 .eq.light{
-  --bg:#F4F6FA; --bg2:#FFFFFF; --surf:#FFFFFF; --surf2:#F0F3F8; --surfhi:#E5EAF2;
-  --line:#DEE4EE; --line2:#C4CEDD;
-  --tx:#0B111E; --tx2:#4C5870; --tx3:#7A8499;
-  --micro:#B8730A; --macro:#0A8492; --onacc:#FFFFFF;
-  --ok:#14804C; --no:#BE3129; --okbg:rgba(20,128,76,.08); --nobg:rgba(190,49,41,.07);
-  --pgrid:#E7ECF4; --paxis:#A9B4C6; --markbg:#FFFFFF; --markline:#D5DDEA;
-  --navbg:rgba(244,246,250,.82); --glowA:rgba(10,132,146,.10); --glowB:rgba(184,115,10,.08);
-  --shadow:0 18px 44px -22px rgba(20,35,70,.26);
+  --bg:#F4ECDE; --bg2:#FBF5EB; --surf:#FFFBF4; --surf2:#F1E7D7; --surfhi:#E7DAC6;
+  --line:#E3D7C4; --line2:#CDBBA0;
+  --tx:#1E1810; --tx2:#544A3B; --tx3:#867A67;
+  --micro:#A8630A; --macro:#0A7A87; --onacc:#FFFFFF;
+  --ok:#3A6B2C; --no:#A93226; --okbg:rgba(58,107,44,.10); --nobg:rgba(169,50,38,.08);
+  --pgrid:#EBE0CE; --paxis:#B6A88F; --markbg:#FFFBF4; --markline:#DCCDB6;
+  --navbg:rgba(244,236,222,.85); --glowA:rgba(10,122,135,.09); --glowB:rgba(168,99,10,.09);
+  --shadow:0 18px 44px -22px rgba(80,60,30,.28);
 }
 .eq::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
   background:radial-gradient(680px 420px at 78% -8%,var(--glowA),transparent 70%),
@@ -649,6 +649,9 @@ const CSS = `
   border:1px solid var(--line2);border-radius:999px;padding:7px 11px;box-shadow:var(--shadow);}
 .eq .swatch{width:20px;height:20px;border-radius:50%;border:1.5px solid rgba(0,0,0,.28);}
 .eq .swatch:hover{transform:scale(1.12);}
+.eq .swatch.erase{background:transparent;border-color:var(--line2);color:var(--tx3);
+  display:flex;align-items:center;justify-content:center;}
+.eq .swatch.erase:hover{color:var(--no);border-color:var(--no);}
 .eq .qbody{position:relative;}
 .eq .notepad{border:1px solid var(--line);border-radius:12px;background:var(--surf);padding:14px;margin-bottom:22px;}
 .eq .notepad textarea{background:var(--bg2);}
@@ -1576,8 +1579,8 @@ function Highlightable({ text, marks, onAdd, onRemove }) {
     const pre = range.cloneRange();
     pre.selectNodeContents(ref.current);
     pre.setEnd(range.startContainer, range.startOffset);
-    const start = pre.toString().length;
-    const end = start + range.toString().length;
+    const start = Math.max(0, Math.min(text.length, pre.toString().length));
+    const end = Math.max(0, Math.min(text.length, start + range.toString().length));
     if (end <= start) return;
     const r = range.getBoundingClientRect();
     const box = ref.current.getBoundingClientRect();
@@ -1585,35 +1588,37 @@ function Highlightable({ text, marks, onAdd, onRemove }) {
   };
 
   const apply = (c) => {
-    onAdd({ start: pop.start, end: pop.end, c });
+    if (c) onAdd({ start: pop.start, end: pop.end, c });
+    else onRemove(pop.start, pop.end);
     window.getSelection()?.removeAllRanges();
     setPop(null);
   };
 
+  /* Colour every character, then walk the run. Overlapping marks simply
+     paint over each other, so no span is ever emitted twice. */
   const pieces = useMemo(() => {
-    const sorted = [...marks].sort((a, b) => a.start - b.start);
-    const merged = [];
-    sorted.forEach((m) => {
-      const last = merged[merged.length - 1];
-      if (last && m.start <= last.end && last.c === m.c) last.end = Math.max(last.end, m.end);
-      else merged.push({ ...m });
+    const paint = new Array(text.length).fill(null);
+    marks.forEach((m) => {
+      const from = Math.max(0, m.start), to = Math.min(text.length, m.end);
+      for (let i = from; i < to; i++) paint[i] = m.c || HL_COLORS[0];
     });
     const out = [];
-    let at = 0;
-    merged.forEach((m) => {
-      if (m.start > at) out.push({ t: text.slice(at, m.start) });
-      out.push({ t: text.slice(m.start, m.end), hl: m });
-      at = Math.max(at, m.end);
-    });
-    if (at < text.length) out.push({ t: text.slice(at) });
+    let i = 0;
+    while (i < text.length) {
+      const c = paint[i];
+      let j = i + 1;
+      while (j < text.length && paint[j] === c) j++;
+      out.push({ t: text.slice(i, j), c, start: i, end: j });
+      i = j;
+    }
     return out;
   }, [text, marks]);
 
   return (
     <p className="qbody" ref={ref} onMouseUp={grab} onTouchEnd={grab}>
-      {pieces.map((p, i) => p.hl
-        ? <mark key={i} style={{ background: p.hl.c || HL_COLORS[0], color: "#12171F" }}
-          title="Click to remove" onClick={() => onRemove(p.hl)}>{p.t}</mark>
+      {pieces.map((p, i) => p.c
+        ? <mark key={i} style={{ background: p.c, color: "#12171F" }}
+          title="Click to remove" onClick={() => onRemove(p.start, p.end)}>{p.t}</mark>
         : <span key={i}>{p.t}</span>)}
       {pop && (
         <span className="hlpop" style={{ left: Math.max(0, pop.x - 58), top: Math.max(-10, pop.y) }}
@@ -1622,6 +1627,10 @@ function Highlightable({ text, marks, onAdd, onRemove }) {
             <button key={c} className="swatch" style={{ background: c }} onClick={() => apply(c)}
               aria-label="Highlight in this colour" />
           ))}
+          <button className="swatch erase" onClick={() => apply(null)} aria-label="Remove the highlight">
+            <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.8"
+              strokeLinecap="round"><path d="M2.4 2.4 9.6 9.6M9.6 2.4 2.4 9.6" /></svg>
+          </button>
         </span>
       )}
     </p>
@@ -1657,7 +1666,16 @@ function QuestionView({ q, index, total, picked, onPick, revealed, saved, onTogg
 
   const marks = hl[q.id] || [];
   const addMark = (m) => setHl((p) => ({ ...p, [q.id]: [...(p[q.id] || []), m] }));
-  const removeMark = (m) => setHl((p) => ({ ...p, [q.id]: (p[q.id] || []).filter((x) => !(x.start === m.start && x.end === m.end)) }));
+  const removeMark = (from, to) => setHl((p) => ({
+    ...p,
+    [q.id]: (p[q.id] || []).flatMap((x) => {
+      if (x.end <= from || x.start >= to) return [x];          // untouched
+      const kept = [];
+      if (x.start < from) kept.push({ ...x, end: from });       // keep the head
+      if (x.end > to) kept.push({ ...x, start: to });           // keep the tail
+      return kept;
+    }),
+  }));
 
   return (
     <>
@@ -1673,6 +1691,13 @@ function QuestionView({ q, index, total, picked, onPick, revealed, saved, onTogg
             <path d="M2.5 2.5h11v11h-11Zm2.6 3h5.8m-5.8 3h5.8m-5.8 3h3.4" /></svg>
           {notes[q.id] ? "Note saved" : "Note"}
         </button>
+        {marks.length > 0 && (
+          <button className="qtool" onClick={() => setHl((p) => ({ ...p, [q.id]: [] }))}>
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"
+              strokeLinecap="round"><path d="M3 13h10M4.6 10.4 9 6l3 3-4.4 4.4Z" /></svg>
+            Clear highlights
+          </button>
+        )}
         <button className={"qtool" + (elimOn ? " on" : "")} onClick={() => setElimOn((v) => !v)}>
           <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
             <circle cx="8" cy="8" r="6" /><path d="M3.8 12.2 12.2 3.8" /></svg>

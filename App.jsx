@@ -507,6 +507,78 @@ const CSS = `
   gap:18px;flex-wrap:wrap;background:var(--navbg);backdrop-filter:blur(12px);border:1px solid var(--line2);
   border-radius:14px;padding:14px 18px;margin:8px 0 40px;box-shadow:var(--shadow);}
 .eq .cbx{width:17px;height:17px;accent-color:var(--accent);cursor:pointer;}
+
+/* ---- app shell with the left rail ---- */
+.eq .shell{display:grid;grid-template-columns:238px 1fr;min-height:100vh;}
+.eq .side{position:sticky;top:0;height:100vh;overflow-y:auto;background:var(--bg2);
+  border-right:1px solid var(--line);padding:18px 14px;display:flex;flex-direction:column;gap:4px;z-index:30;}
+.eq .side .brand{display:flex;align-items:center;gap:10px;background:none;border:0;padding:6px 8px 16px;}
+.eq .side .brand .wm{font-size:19px;letter-spacing:-.01em;}
+.eq .sgroup{font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--tx3);
+  padding:16px 10px 6px;}
+.eq .sitem{display:flex;align-items:center;gap:11px;width:100%;background:none;border:0;text-align:left;
+  padding:9px 11px;border-radius:9px;font-size:14px;color:var(--tx2);transition:background .14s,color .14s;}
+.eq .sitem:hover{background:var(--surf2);color:var(--tx);}
+.eq .sitem.on{background:var(--surf2);color:var(--tx);font-weight:500;
+  box-shadow:inset 2px 0 0 var(--accent);}
+.eq .sitem svg{flex:0 0 17px;opacity:.85;}
+.eq .sitem .sdot{width:7px;height:7px;border-radius:50%;flex:0 0 7px;margin-left:5px;}
+.eq .sfoot{margin-top:auto;padding-top:16px;border-top:1px solid var(--line);}
+.eq .main{min-width:0;}
+.eq .mtop{display:none;}
+
+/* ---- question surface ---- */
+.eq .qtop{display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:var(--surf);
+  border:1px solid var(--line);border-radius:12px;padding:10px 14px;margin-bottom:26px;}
+.eq .qnum{background:var(--tx);color:var(--bg);font-family:'JetBrains Mono',monospace;font-weight:600;
+  font-size:14px;width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;}
+.eq .qtool{display:inline-flex;align-items:center;gap:7px;background:none;border:0;color:var(--tx2);
+  font-size:13px;padding:6px 9px;border-radius:8px;}
+.eq .qtool:hover{background:var(--surf2);color:var(--tx);}
+.eq .qtool.on{color:var(--accent);}
+.eq .qbody{font-size:20px;line-height:1.55;font-weight:400;margin:0 0 26px;letter-spacing:-.005em;
+  user-select:text;}
+.eq .qbody mark{background:color-mix(in srgb,var(--micro) 34%,transparent);color:inherit;
+  border-radius:2px;padding:1px 0;cursor:pointer;}
+.eq .orow{display:grid;grid-template-columns:1fr 42px;gap:10px;align-items:center;margin-bottom:11px;}
+.eq .obtn{display:grid;grid-template-columns:30px 1fr;gap:14px;align-items:center;text-align:left;width:100%;
+  background:var(--bg2);border:1.5px solid var(--line2);border-radius:12px;padding:14px 16px;
+  font-size:15.5px;line-height:1.5;color:var(--tx);transition:border-color .14s,background .14s;}
+.eq .obtn:hover:not(:disabled){border-color:var(--tx3);}
+.eq .obtn .circ{width:28px;height:28px;border-radius:50%;border:1.5px solid var(--line2);display:flex;
+  align-items:center;justify-content:center;font-size:13px;font-weight:600;color:var(--tx2);
+  font-family:'JetBrains Mono',monospace;transition:all .14s;}
+.eq .obtn.sel{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 9%,var(--bg2));}
+.eq .obtn.sel .circ{background:var(--accent);color:var(--onacc);border-color:var(--accent);}
+.eq .obtn.good{border-color:var(--ok);background:var(--okbg);}
+.eq .obtn.good .circ{background:var(--ok);color:#fff;border-color:var(--ok);}
+.eq .obtn.bad{border-color:var(--no);background:var(--nobg);}
+.eq .obtn.bad .circ{background:var(--no);color:#fff;border-color:var(--no);}
+.eq .obtn.out{opacity:.4;}
+.eq .obtn.out span:last-child{text-decoration:line-through;}
+.eq .elim{width:34px;height:34px;border-radius:50%;border:1.5px solid var(--line);background:none;
+  color:var(--tx3);font-family:'JetBrains Mono',monospace;font-size:12.5px;position:relative;
+  display:flex;align-items:center;justify-content:center;}
+.eq .elim:hover{border-color:var(--tx2);color:var(--tx);}
+.eq .elim::after{content:'';position:absolute;left:5px;right:5px;height:1.5px;background:currentColor;
+  transform:scaleX(0);transition:transform .15s;}
+.eq .elim.on{color:var(--tx);border-color:var(--tx2);}
+.eq .elim.on::after{transform:scaleX(1);}
+.eq .qfoot{position:sticky;bottom:0;display:flex;justify-content:space-between;align-items:center;gap:14px;
+  flex-wrap:wrap;background:var(--navbg);backdrop-filter:blur(12px);border-top:1px solid var(--line);
+  padding:14px 0;margin-top:30px;}
+.eq .notepad{border:1px solid var(--line);border-radius:12px;background:var(--surf);padding:14px;margin-bottom:22px;}
+.eq .notepad textarea{background:var(--bg2);}
+
+@media (max-width:900px){
+  .eq .shell{grid-template-columns:1fr;}
+  .eq .side{position:fixed;left:0;top:0;bottom:0;width:250px;transform:translateX(-100%);
+    transition:transform .25s;box-shadow:0 0 60px rgba(0,0,0,.5);}
+  .eq .side.open{transform:none;}
+  .eq .mtop{display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--line);
+    position:sticky;top:0;background:var(--navbg);backdrop-filter:blur(12px);z-index:20;}
+  .eq .scrim{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:25;}
+}
 @media (max-width:760px){
   .eq .bhead{display:none;}
   .eq .brow{grid-template-columns:24px 1fr auto;gap:12px;}
@@ -688,6 +760,10 @@ function parseRoute() {
   const p = (window.location.pathname || "/").toLowerCase().split("/").filter(Boolean);
   if (p[0] === "tutor") return { v: "tutor" };
   if (p[0] === "admin") return { v: "admin" };
+  if (p[0] === "planner") return { v: "planner" };
+  if (p[0] === "analytics") return { v: "analytics" };
+  if (p[0] === "saved") return { v: "saved" };
+  if (p[0] === "tests") return { v: "tests" };
   if (p[0] === "micro" || p[0] === "macro") {
     if (p[1] === "bank") return { v: "bank", subject: p[0] };
     const n = Number(p[1]);
@@ -707,6 +783,8 @@ export default function App() {
     setRoute(r);
     const path = r.v === "home" ? "/" : r.v === "course" ? `/${r.subject}`
       : r.v === "bank" ? `/${r.subject}/bank`
+        : r.v === "planner" ? "/planner" : r.v === "analytics" ? "/analytics"
+          : r.v === "saved" ? "/saved" : r.v === "tests" ? "/tests"
         : r.v === "unit" ? `/${r.subject}/${r.unit}` : r.v === "tutor" ? "/tutor"
           : r.v === "admin" ? "/admin" : null;
     /* Practice, mock and result screens carry state in memory, so they
@@ -806,15 +884,19 @@ export default function App() {
             </div>
           </div>
         )}
-        {route.v === "home" && <Home bank={bank} me={me} nav={nav} />}
-        {route.v === "course" && <Course subject={route.subject} bank={bank} me={me} nav={nav} />}
+        {route.v === "home" && <Shell nav={nav} active="home"><Home bank={bank} me={me} nav={nav} /></Shell>}
+        {route.v === "course" && <Shell nav={nav} active={`bank-${route.subject}`}><Course subject={route.subject} bank={bank} me={me} nav={nav} /></Shell>}
         {route.v === "bank" && <Bank subject={route.subject} bank={bank} me={me} nav={nav} />}
-        {route.v === "unit" && <UnitPage subject={route.subject} unit={route.unit} bank={bank} me={me} nav={nav} />}
-        {route.v === "practice" && <Practice {...route} go={go} onFinish={recordSession} />}
-        {route.v === "results" && <Results {...route} nav={nav} />}
-        {route.v === "mock" && <Mock {...route} go={go} onFinish={recordSession} />}
-        {route.v === "mockresult" && <MockResult {...route} bands={bank.bands} nav={nav} />}
-        {route.v === "tutor" && <Tutor nav={nav} />}
+        {route.v === "planner" && <Planner bank={bank} me={me} nav={nav} />}
+        {route.v === "analytics" && <Analytics bank={bank} me={me} nav={nav} />}
+        {route.v === "saved" && <Saved bank={bank} me={me} nav={nav} />}
+        {route.v === "tests" && <Tests bank={bank} nav={nav} />}
+        {route.v === "unit" && <Shell nav={nav} active={`bank-${route.subject}`}><UnitPage subject={route.subject} unit={route.unit} bank={bank} me={me} nav={nav} /></Shell>}
+        {route.v === "practice" && <Practice {...route} go={go} onFinish={recordSession} nav={nav} />}
+        {route.v === "results" && <Shell nav={nav} active={`bank-${route.subject}`}><Results {...route} nav={nav} /></Shell>}
+        {route.v === "mock" && <Mock {...route} go={go} onFinish={recordSession} nav={nav} />}
+        {route.v === "mockresult" && <Shell nav={nav} active="test"><MockResult {...route} bands={bank.bands} nav={nav} /></Shell>}
+        {route.v === "tutor" && <Shell nav={nav} active="tutor"><Tutor nav={nav} /></Shell>}
         {route.v === "admin" && <Admin bank={bank} setBank={setBank} refreshBank={refreshBank} go={go} />}
       </div>
     </div>
@@ -822,34 +904,6 @@ export default function App() {
 }
 
 /* ---------------------------- chrome ---------------------------- */
-
-function Nav({ nav, active }) {
-  const { go, theme, toggleTheme } = nav;
-  return (
-    <div className="nav">
-      <div className="wrap navin">
-        <button className="logo" onClick={() => go({ v: "home" })} aria-label="Equilibrium home">
-          <Mark /><span className="wm">Equilibrium</span>
-        </button>
-        <div className="nlinks">
-          <button className={"nlink" + (active === "micro" ? " on" : "")} onClick={() => go({ v: "course", subject: "micro" })}>Micro</button>
-          <button className={"nlink" + (active === "macro" ? " on" : "")} onClick={() => go({ v: "course", subject: "macro" })}>Macro</button>
-          <button className={"nlink hideM" + (active === "tutor" ? " on" : "")} onClick={() => go({ v: "tutor" })}>Ask AI</button>
-          <button className="tgl" onClick={toggleTheme} aria-label={theme === "light" ? "Switch to dark" : "Switch to light"}>
-            <ThemeIcon light={theme === "light"} />
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-const Foot = () => (
-  <div className="wrap"><div className="foot">
-    <span>Equilibrium — AP Microeconomics and Macroeconomics</span>
-    <span>Aligned to the College Board course and exam description</span>
-  </div></div>
-);
 
 /* ---------------------------- home ---------------------------- */
 
@@ -886,7 +940,7 @@ function Home({ bank, me, nav }) {
 
   return (
     <>
-      <Nav nav={nav} active="home" />
+      
       <div className="wrap">
         <div className="hero">
           <div>
@@ -906,7 +960,6 @@ function Home({ bank, me, nav }) {
           <div className="feat"><h3>A tutor that knows the course</h3><p>Stuck on crowding out or excess capacity? Ask, and get an answer built around the graphs you will have to draw.</p></div>
         </div>
       </div>
-      <Foot />
     </>
   );
 }
@@ -933,7 +986,7 @@ function Course({ subject, bank, me, nav }) {
 
   return (
     <>
-      <Nav nav={nav} active={subject} />
+      
       <div className="wrap">
         <div className="crumb"><button onClick={() => go({ v: "home" })}>Equilibrium</button><span>/</span><span>AP {SNAME[subject]}</span></div>
         <div className="phead">
@@ -989,7 +1042,7 @@ function Course({ subject, bank, me, nav }) {
 
             <div className="mockcard">
               <div>
-                <span className="mk">Mock exam</span>
+                <span className="mk">Full-length test</span>
                 <h3>Sit the paper and get a predicted score</h3>
                 <p>A timed multiple-choice paper drawn in College Board unit proportions, then a full score report: composite out of 90 and a predicted 1 to 5.</p>
                 <div className="ml">
@@ -1005,7 +1058,6 @@ function Course({ subject, bank, me, nav }) {
           </>
         )}
       </div>
-      <Foot />
     </>
   );
 }
@@ -1021,7 +1073,7 @@ function UnitPage({ subject, unit, bank, me, nav }) {
 
   return (
     <>
-      <Nav nav={nav} active={subject} />
+      
       <div className="wrap" style={{ maxWidth: 900 }}>
         <div className="crumb">
           <button onClick={() => go({ v: "home" })}>Equilibrium</button><span>/</span>
@@ -1073,11 +1125,211 @@ function UnitPage({ subject, unit, bank, me, nav }) {
         )}
         <div style={{ height: 56 }} />
       </div>
-      <Foot />
     </>
   );
 }
 
+
+
+/* ---------------------------- icons ---------------------------- */
+const I = {
+  home: <path d="M2.5 7.2 9 2.2l6.5 5V15a.8.8 0 0 1-.8.8h-3.4v-4.4H6.7v4.4H3.3a.8.8 0 0 1-.8-.8Z" />,
+  tutor: <path d="M2.6 3.5h12.8v8.2H9.9L6.4 14.6v-2.9H2.6Z" />,
+  planner: <path d="M3 4.2h12v11H3Zm0 3.4h12M6.2 2.4v3.2m5.6-3.2v3.2" />,
+  analytics: <path d="M3 15.2V9m4.7 6.2V3.6m4.7 11.6v-7" />,
+  saved: <path d="M4.6 2.6h8.8v13l-4.4-3.3-4.4 3.3Z" />,
+  bank: <path d="M3 4.4h12v9.2H3Zm0 3.1h12M7.2 7.5v6.1" />,
+  test: <path d="M9 2.6a6.4 6.4 0 1 1 0 12.8A6.4 6.4 0 0 1 9 2.6Zm0 3v3.6l2.4 1.6" />,
+};
+const Icon = ({ d }) => (
+  <svg width="17" height="17" viewBox="0 0 18 18" fill="none" stroke="currentColor"
+    strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round" aria-hidden="true">{d}</svg>
+);
+
+/* ---------------------------- app shell ---------------------------- */
+
+function Shell({ nav, active, children }) {
+  const { go, theme, toggleTheme } = nav;
+  const [open, setOpen] = useState(false);
+  const item = (key, label, icon, route, dot) => (
+    <button className={"sitem" + (active === key ? " on" : "")}
+      onClick={() => { setOpen(false); go(route); }}>
+      <Icon d={icon} /><span>{label}</span>
+      {dot && <span className="sdot" style={{ background: dot }} />}
+    </button>
+  );
+  return (
+    <div className="shell">
+      {open && <div className="scrim" onClick={() => setOpen(false)} />}
+      <aside className={"side" + (open ? " open" : "")}>
+        <button className="brand" onClick={() => { setOpen(false); go({ v: "home" }); }}>
+          <Mark /><span className="wm">Equilibrium</span>
+        </button>
+        {item("home", "Home", I.home, { v: "home" })}
+        {item("tutor", "Ask Equi tutor", I.tutor, { v: "tutor" })}
+        {item("planner", "Study planner", I.planner, { v: "planner" })}
+        {item("analytics", "Analytics", I.analytics, { v: "analytics" })}
+        {item("saved", "Saved and mistakes", I.saved, { v: "saved" })}
+        <div className="sgroup">Practice</div>
+        {item("bank-micro", "Question bank · Micro", I.bank, { v: "bank", subject: "micro" }, "var(--micro)")}
+        {item("bank-macro", "Question bank · Macro", I.bank, { v: "bank", subject: "macro" }, "var(--macro)")}
+        {item("test", "Full-length test", I.test, { v: "tests" })}
+        <div className="sfoot">
+          <button className="sitem" onClick={toggleTheme}>
+            <ThemeIcon light={theme === "light"} />
+            <span>{theme === "light" ? "Dark mode" : "Light mode"}</span>
+          </button>
+        </div>
+      </aside>
+      <div className="main">
+        <div className="mtop">
+          <button className="mini" onClick={() => setOpen(true)} aria-label="Open menu">☰</button>
+          <Mark size={22} /><span className="wm" style={{ fontSize: 17 }}>Equilibrium</span>
+        </div>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+/* ---------------------------- question surface ----------------------------
+   Shared by practice and the full-length test: circled letters, an answer
+   eliminator, text highlighting, a private note, and check-then-next.
+--------------------------------------------------------------------------- */
+
+function useLocal(key, initial) {
+  const [v, setV] = useState(() => {
+    try { const r = localStorage.getItem(key); return r ? JSON.parse(r) : initial; } catch { return initial; }
+  });
+  const set = useCallback((next) => {
+    setV((prev) => {
+      const val = typeof next === "function" ? next(prev) : next;
+      try { localStorage.setItem(key, JSON.stringify(val)); } catch { /* private mode */ }
+      return val;
+    });
+  }, [key]);
+  return [v, set];
+}
+
+function Highlightable({ text, marks, onAdd, onRemove }) {
+  const ref = useRef(null);
+
+  const grab = () => {
+    const sel = window.getSelection();
+    if (!sel || sel.isCollapsed || !ref.current) return;
+    const range = sel.getRangeAt(0);
+    if (!ref.current.contains(range.commonAncestorContainer)) return;
+    const pre = range.cloneRange();
+    pre.selectNodeContents(ref.current);
+    pre.setEnd(range.startContainer, range.startOffset);
+    const start = pre.toString().length;
+    const end = start + range.toString().length;
+    if (end > start) onAdd({ start, end });
+    sel.removeAllRanges();
+  };
+
+  /* Merge overlaps so repeated passes never nest. */
+  const pieces = useMemo(() => {
+    const sorted = [...marks].sort((a, b) => a.start - b.start);
+    const merged = [];
+    sorted.forEach((m) => {
+      const last = merged[merged.length - 1];
+      if (last && m.start <= last.end) last.end = Math.max(last.end, m.end);
+      else merged.push({ ...m });
+    });
+    const out = [];
+    let at = 0;
+    merged.forEach((m) => {
+      if (m.start > at) out.push({ t: text.slice(at, m.start) });
+      out.push({ t: text.slice(m.start, m.end), hl: m });
+      at = m.end;
+    });
+    if (at < text.length) out.push({ t: text.slice(at) });
+    return out;
+  }, [text, marks]);
+
+  return (
+    <p className="qbody" ref={ref} onMouseUp={grab} onTouchEnd={grab}>
+      {pieces.map((p, i) => p.hl
+        ? <mark key={i} title="Click to remove" onClick={() => onRemove(p.hl)}>{p.t}</mark>
+        : <span key={i}>{p.t}</span>)}
+    </p>
+  );
+}
+
+function QuestionView({ q, index, total, picked, onPick, revealed, saved, onToggleSave, accentSubject }) {
+  const [elim, setElim] = useState([]);
+  const [elimOn, setElimOn] = useState(false);
+  const [noteOpen, setNoteOpen] = useState(false);
+  const [notes, setNotes] = useLocal("equilibrium:notes", {});
+  const [hl, setHl] = useLocal("equilibrium:highlights", {});
+
+  useEffect(() => { setElim([]); setNoteOpen(false); }, [q.id]);
+
+  const marks = hl[q.id] || [];
+  const addMark = (m) => setHl((p) => ({ ...p, [q.id]: [...(p[q.id] || []), m] }));
+  const removeMark = (m) => setHl((p) => ({ ...p, [q.id]: (p[q.id] || []).filter((x) => !(x.start === m.start && x.end === m.end)) }));
+
+  return (
+    <>
+      <div className="qtop">
+        <span className="qnum">{index + 1}</span>
+        <button className={"qtool" + (saved ? " on" : "")} onClick={onToggleSave}>
+          <svg width="13" height="15" viewBox="0 0 13 15" fill={saved ? "currentColor" : "none"}
+            stroke="currentColor" strokeWidth="1.5"><path d="M1.2 1.2h10.6v12.6L6.5 10l-5.3 3.8Z" /></svg>
+          {saved ? "Saved" : "Mark for review"}
+        </button>
+        <button className={"qtool" + (noteOpen ? " on" : "")} onClick={() => setNoteOpen((v) => !v)}>
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+            <path d="M2.5 2.5h11v11h-11Zm2.6 3h5.8m-5.8 3h5.8m-5.8 3h3.4" /></svg>
+          {notes[q.id] ? "Note saved" : "Note"}
+        </button>
+        <button className={"qtool" + (elimOn ? " on" : "")} onClick={() => setElimOn((v) => !v)}>
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+            <circle cx="8" cy="8" r="6" /><path d="M3.8 12.2 12.2 3.8" /></svg>
+          Eliminate
+        </button>
+        <span style={{ flex: 1 }} />
+        <span className="hint num">{index + 1} / {total}</span>
+      </div>
+
+      {noteOpen && (
+        <div className="notepad">
+          <textarea rows={3} placeholder="Your note on this question — only you see it."
+            value={notes[q.id] || ""}
+            onChange={(e) => setNotes((p) => ({ ...p, [q.id]: e.target.value }))} />
+        </div>
+      )}
+
+      <Highlightable text={q.stem} marks={marks} onAdd={addMark} onRemove={removeMark} />
+
+      <div>
+        {q.choices.map((c, i) => {
+          let cls = "obtn";
+          if (revealed) {
+            if (i === q.answer) cls += " good";
+            else if (i === picked) cls += " bad";
+          } else if (picked === i) cls += " sel";
+          if (!revealed && elim.includes(i)) cls += " out";
+          return (
+            <div className="orow" key={i}>
+              <button className={cls} disabled={revealed} onClick={() => onPick(i)}>
+                <span className="circ">{L[i]}</span><span>{c}</span>
+              </button>
+              {elimOn && !revealed ? (
+                <button className={"elim" + (elim.includes(i) ? " on" : "")}
+                  aria-label={`Cross out ${L[i]}`}
+                  onClick={() => setElim((p) => (p.includes(i) ? p.filter((x) => x !== i) : [...p, i]))}>
+                  {L[i]}
+                </button>
+              ) : <span />}
+            </div>
+          );
+        })}
+      </div>
+    </>
+  );
+}
 
 /* ---------------------------- question bank ---------------------------- */
 
@@ -1109,7 +1361,7 @@ function Bank({ subject, bank, me, nav }) {
 
   return (
     <>
-      <Nav nav={nav} active={subject} />
+      
       <div className="wrap">
         <div className="crumb">
           <button onClick={() => go({ v: "home" })}>Equilibrium</button><span>/</span>
@@ -1192,49 +1444,54 @@ function Bank({ subject, bank, me, nav }) {
         )}
         <div style={{ height: 40 }} />
       </div>
-      <Foot />
     </>
   );
 }
 
 /* ---------------------------- practice ---------------------------- */
 
-function Practice({ subject, unit, pool, go, onFinish }) {
+function Practice({ subject, unit, pool, go, onFinish, nav }) {
   const [idx, setIdx] = useState(0);
   const [picked, setPicked] = useState(null);
+  const [revealed, setRevealed] = useState(false);
   const [items, setItems] = useState([]);
   const [secs, setSecs] = useState(0);
   const [help, setHelp] = useState(null);
   const [helping, setHelping] = useState(false);
+  const [savedIds, setSavedIds] = useLocal("equilibrium:saved", []);
   const q = pool[idx];
 
-  useEffect(() => { const t = setInterval(() => setSecs((s) => s + 1), 1000); return () => clearInterval(t); }, []);
+  useEffect(() => { const t = setInterval(() => setSecs((x) => x + 1), 1000); return () => clearInterval(t); }, []);
 
-  const submit = useCallback((c) => {
-    if (picked !== null || !q) return;
-    setPicked(c);
-    setItems((p) => [...p, { id: q.id, picked: c, correct: c === q.answer, q }]);
-  }, [picked, q]);
+  const check = useCallback(() => {
+    if (picked === null || revealed) return;
+    setRevealed(true);
+    setItems((p) => [...p, { id: q.id, picked, correct: picked === q.answer, q }]);
+  }, [picked, revealed, q]);
 
   const next = useCallback(() => {
-    if (idx + 1 >= pool.length) { onFinish({ subject, unit, items, secs }); go({ v: "results", subject, unit, items, secs }); }
-    else { setIdx((i) => i + 1); setPicked(null); setHelp(null); }
+    if (idx + 1 >= pool.length) {
+      onFinish({ subject, unit, items, secs });
+      go({ v: "results", subject, unit, items, secs });
+    } else {
+      setIdx((i) => i + 1); setPicked(null); setRevealed(false); setHelp(null);
+    }
   }, [idx, pool.length, items, secs, subject, unit, onFinish, go]);
 
   useEffect(() => {
     const h = (e) => {
       if (e.target && ["TEXTAREA", "INPUT"].includes(e.target.tagName)) return;
-      if (picked === null && q) {
-        const i = ["1", "2", "3", "4", "5", "6"].indexOf(e.key);
-        if (i >= 0 && i < q.choices.length) { e.preventDefault(); return submit(i); }
+      if (!revealed) {
         const li = L.indexOf(e.key.toUpperCase());
-        if (li >= 0 && li < q.choices.length) { e.preventDefault(); return submit(li); }
+        const ni = ["1", "2", "3", "4", "5", "6"].indexOf(e.key);
+        const pick = li >= 0 && li < q.choices.length ? li : ni >= 0 && ni < q.choices.length ? ni : -1;
+        if (pick >= 0) { e.preventDefault(); return setPicked(pick); }
       }
-      if (picked !== null && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); next(); }
+      if (e.key === "Enter") { e.preventDefault(); revealed ? next() : check(); }
     };
     window.addEventListener("keydown", h);
     return () => window.removeEventListener("keydown", h);
-  }, [picked, q, submit, next]);
+  }, [q, revealed, check, next]);
 
   const askDeeper = async () => {
     setHelping(true);
@@ -1246,46 +1503,271 @@ function Practice({ subject, unit, pool, go, onFinish }) {
     setHelping(false);
   };
 
-  const label = unit === 0 ? "Mixed set" : `Unit ${unit} · ${UNITS[subject][unit - 1].title}`;
+  const label = q.topic ? `${q.topic} ${topicTitle(subject, q.topic)}`
+    : unit === 0 ? "Mixed set" : `Unit ${unit}`;
 
   return (
-    <>
-      <div className="pbar"><div className="wrap pbin">
-        <Mark size={22} />
-        <div className="segs">{pool.map((_, i) => {
-          const r = items[i];
-          return <div key={i} className={"seg " + (r ? (r.correct ? "ok" : "no") : i === idx ? "now" : "")} />;
-        })}</div>
-        <div className="clock">{mmss(secs)}</div>
-        <button className="mini" onClick={() => go({ v: "course", subject })}>End set</button>
-      </div></div>
+    <Shell nav={nav} active={`bank-${subject}`}>
+      <div className="wrap" style={{ maxWidth: 820 }}>
+        <div className="crumb" style={{ justifyContent: "space-between" }}>
+          <span style={{ display: "flex", gap: 9, alignItems: "center" }}>
+            <button onClick={() => go({ v: "bank", subject })}>Question bank</button>
+            <span>/</span><span>{label}</span>
+          </span>
+          <span style={{ display: "flex", gap: 12, alignItems: "center" }}>
+            <span className="clock">{mmss(secs)}</span>
+            <button className="mini" onClick={() => go({ v: "bank", subject })}>End set</button>
+          </span>
+        </div>
 
-      <div className="qwrap">
-        <div className="qtag"><span>{label}</span><span className="dv" /><span className="num">{idx + 1} / {pool.length}</span><span className="dv" /><span>{q.difficulty}</span></div>
-        <p className="qstem">{q.stem}</p>
-        <div className="opts">
-          {q.choices.map((c, i) => {
-            let cls = "opt";
-            if (picked !== null) { if (i === q.answer) cls += " good"; else if (i === picked) cls += " bad"; }
-            return <button key={i} className={cls} disabled={picked !== null} onClick={() => submit(i)}>
-              <span className="k">{L[i]}</span><span>{c}</span></button>;
+        <div style={{ height: 18 }} />
+        <div className="segs" style={{ marginBottom: 22 }}>
+          {pool.map((_, i) => {
+            const r = items[i];
+            return <div key={i} className={"seg " + (r ? (r.correct ? "ok" : "no") : i === idx ? "now" : "")} />;
           })}
         </div>
-        {picked !== null && (
+
+        <QuestionView q={q} index={idx} total={pool.length} picked={picked} revealed={revealed}
+          onPick={setPicked} saved={savedIds.includes(q.id)}
+          onToggleSave={() => setSavedIds((p) => (p.includes(q.id) ? p.filter((x) => x !== q.id) : [...p, q.id]))} />
+
+        {revealed && (
           <div className="fb">
-            <div className={"v " + (picked === q.answer ? "y" : "n")}>{picked === q.answer ? "Correct" : `Not quite — the answer is ${L[q.answer]}`}</div>
+            <div className={"v " + (picked === q.answer ? "y" : "n")}>
+              {picked === q.answer ? "Correct" : `Not quite — the answer is ${L[q.answer]}`}
+            </div>
             <p>{q.explanation}</p>
             {help && <p style={{ marginTop: 16, paddingTop: 16, borderTop: "1px solid var(--line)" }}>{help}</p>}
             {!help && <button className="mini" style={{ marginTop: 14 }} onClick={askDeeper} disabled={helping}>
               {helping ? <><span className="spin" /> Thinking</> : "Explain it another way"}</button>}
           </div>
         )}
-        <div className="actions">
-          <button className="btn" onClick={next} disabled={picked === null}>{idx + 1 >= pool.length ? "See results" : "Next question"}</button>
-          <span className="hint">{picked === null ? "Press A–E or 1–5 to answer" : "Press Enter to continue"}</span>
+
+        <div className="qfoot">
+          <span className="hint">
+            {revealed ? "Press Enter for the next question" : "Pick with A–E, then Enter to check"}
+          </span>
+          {revealed
+            ? <button className="btn acc" onClick={next}>{idx + 1 >= pool.length ? "See results" : "Next"}</button>
+            : <button className="btn" onClick={check} disabled={picked === null}>Check</button>}
         </div>
       </div>
-    </>
+    </Shell>
+  );
+}
+
+
+/* ---------------------------- saved and mistakes ---------------------------- */
+
+function Saved({ bank, me, nav }) {
+  const { go } = nav;
+  const [savedIds] = useLocal("equilibrium:saved", []);
+  const [notes] = useLocal("equilibrium:notes", {});
+  const [tab, setTab] = useState("saved");
+  const missed = me.missed || [];
+
+  const list = tab === "saved"
+    ? bank.questions.filter((q) => savedIds.includes(q.id))
+    : bank.questions.filter((q) => missed.includes(q.id));
+
+  const start = () => { if (list.length) go({ v: "practice", subject: list[0].subject, unit: 0, pool: shuffle(list) }); };
+
+  return (
+    <Shell nav={nav} active="saved">
+      <div className="wrap">
+        <div className="phead" style={{ paddingTop: 30 }}>
+          <div>
+            <h1>Saved and mistakes</h1>
+            <div className="sub">Questions you marked for review, and every question you have got wrong and not yet fixed.</div>
+          </div>
+        </div>
+        <div className="filters">
+          <button className={"fbtn" + (tab === "saved" ? " on" : "")} onClick={() => setTab("saved")}>Marked for review ({savedIds.length})</button>
+          <button className={"fbtn" + (tab === "missed" ? " on" : "")} onClick={() => setTab("missed")}>Still getting wrong ({missed.length})</button>
+        </div>
+
+        {list.length === 0 ? (
+          <div className="empty">
+            <h3>Nothing here yet</h3>
+            {tab === "saved"
+              ? "Use the bookmark on any question to keep it for later."
+              : "Questions you answer incorrectly land here, and leave once you get them right."}
+          </div>
+        ) : (
+          <>
+            <div className="actions" style={{ marginTop: 0, marginBottom: 20 }}>
+              <button className="btn acc" onClick={start}>Practise these {list.length}</button>
+            </div>
+            <div className="qlist">
+              {list.map((q) => (
+                <div key={q.id} className="qitem">
+                  <span className="pill">{q.topic || (q.subject === "micro" ? "MI" : "MA") + "·" + q.unit}</span>
+                  <span>
+                    {q.stem.length > 96 ? q.stem.slice(0, 96) + "…" : q.stem}
+                    {notes[q.id] && <span className="hint" style={{ display: "block", marginTop: 4 }}>Note: {notes[q.id]}</span>}
+                  </span>
+                  <span className="st">{SSHORT[q.subject]}</span>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+        <div style={{ height: 50 }} />
+      </div>
+    </Shell>
+  );
+}
+
+/* ---------------------------- analytics ---------------------------- */
+
+function Analytics({ bank, me, nav }) {
+  const rows = (subject) => UNITS[subject].flatMap((u) =>
+    (TOPICS[subject][u.n] || []).map(([code, title]) => {
+      const st = (me.topic || {})[`${subject}-${code}`];
+      return { code, title, unit: u.n, a: st?.a || 0, p: st ? pct(st.c, st.a) : null };
+    })).filter((r) => r.a > 0);
+
+  const overall = (subject) => {
+    let a = 0, c = 0;
+    Object.entries(me.unit || {}).forEach(([k, v]) => { if (k.startsWith(subject + "-")) { a += v.a; c += v.c; } });
+    return { a, p: pct(c, a) };
+  };
+
+  return (
+    <Shell nav={nav} active="analytics">
+      <div className="wrap">
+        <div className="phead" style={{ paddingTop: 30 }}>
+          <div>
+            <h1>Analytics</h1>
+            <div className="sub">Your accuracy on every topic you have practised, weakest first. This is stored on this device.</div>
+          </div>
+        </div>
+        {["micro", "macro"].map((sub) => {
+          const list = rows(sub).sort((x, y) => x.p - y.p);
+          const o = overall(sub);
+          return (
+            <div key={sub} style={{ marginBottom: 34, "--accent": sub === "micro" ? "var(--micro)" : "var(--macro)" }}>
+              <div className="ugtitle">
+                <h3>AP {SNAME[sub]}</h3>
+                <span className="num">{o.a ? `${o.p}% across ${o.a} questions` : "nothing yet"}</span>
+              </div>
+              {list.length === 0
+                ? <div className="empty" style={{ padding: 26 }}>Practise a topic and it will show up here.</div>
+                : <div className="btable">
+                  {list.map((r) => (
+                    <div className="brow" key={r.code} style={{ gridTemplateColumns: "1fr 150px 74px" }}>
+                      <span className="tp"><span className="tc">{r.code}</span><span className="tt">{r.title}</span></span>
+                      <span className="prog"><span className="bar"><i style={{ width: `${r.p}%` }} /></span>
+                        <span className="n">{r.a}</span></span>
+                      <span className="acc2">
+                        <span className="pip" style={{ background: r.p >= 80 ? "var(--ok)" : r.p >= 55 ? "var(--micro)" : "var(--no)" }} />
+                        {r.p}%
+                      </span>
+                    </div>
+                  ))}
+                </div>}
+            </div>
+          );
+        })}
+        <div style={{ height: 50 }} />
+      </div>
+    </Shell>
+  );
+}
+
+/* ---------------------------- study planner ---------------------------- */
+
+function Planner({ bank, me, nav }) {
+  const { go } = nav;
+  const weak = (subject) => UNITS[subject].flatMap((u) =>
+    (TOPICS[subject][u.n] || []).map(([code, title]) => {
+      const st = (me.topic || {})[`${subject}-${code}`];
+      const have = bank.questions.filter((q) => q.subject === subject && q.topic === code).length;
+      return { code, title, weight: u.weight, have, a: st?.a || 0, p: st ? pct(st.c, st.a) : null };
+    })).filter((r) => r.have > 0);
+
+  /* Rank by what the exam rewards: heavy units you are weak or untested on. */
+  const plan = (subject) => weak(subject)
+    .map((r) => ({ ...r, score: r.weight * (r.p === null ? 1 : (100 - r.p) / 100 + 0.15) }))
+    .sort((x, y) => y.score - x.score).slice(0, 6);
+
+  return (
+    <Shell nav={nav} active="planner">
+      <div className="wrap">
+        <div className="phead" style={{ paddingTop: 30 }}>
+          <div>
+            <h1>Study planner</h1>
+            <div className="sub">What to work on next, ranked by how much each topic is worth on the exam against how well you are doing on it.</div>
+          </div>
+        </div>
+        {["micro", "macro"].map((sub) => {
+          const list = plan(sub);
+          return (
+            <div key={sub} style={{ marginBottom: 34, "--accent": sub === "micro" ? "var(--micro)" : "var(--macro)" }}>
+              <div className="ugtitle"><h3>AP {SNAME[sub]}</h3></div>
+              {list.length === 0
+                ? <div className="empty" style={{ padding: 26 }}>No questions in this course yet.</div>
+                : <div className="btable">
+                  {list.map((r, i) => (
+                    <button className="brow" key={r.code} style={{ gridTemplateColumns: "26px 1fr 150px 74px" }}
+                      onClick={() => go({ v: "practice", subject: sub, unit: 0, pool: shuffle(bank.questions.filter((q) => q.subject === sub && q.topic === r.code)) })}>
+                      <span className="num" style={{ color: "var(--tx3)", fontSize: 12.5 }}>{i + 1}</span>
+                      <span className="tp"><span className="tc">{r.code}</span><span className="tt">{r.title}</span></span>
+                      <span className="hint">{r.p === null ? "not started" : `${r.p}% so far`} · unit worth {r.weight}%</span>
+                      <span className="acc2" style={{ color: "var(--accent)" }}>{r.have} q</span>
+                    </button>
+                  ))}
+                </div>}
+            </div>
+          );
+        })}
+        <div style={{ height: 50 }} />
+      </div>
+    </Shell>
+  );
+}
+
+/* ---------------------------- full-length test picker ---------------------------- */
+
+function Tests({ bank, nav }) {
+  const { go } = nav;
+  const startTest = (subject) => {
+    const p = buildMock(bank.questions, subject);
+    if (p.length >= 5) go({ v: "mock", subject, pool: p });
+  };
+  return (
+    <Shell nav={nav} active="test">
+      <div className="wrap">
+        <div className="phead" style={{ paddingTop: 30 }}>
+          <div>
+            <h1>Full-length test</h1>
+            <div className="sub">A timed multiple-choice paper drawn in College Board unit proportions, then a score report with a predicted 1 to 5.</div>
+          </div>
+        </div>
+        {["micro", "macro"].map((sub) => {
+          const n = Math.min(60, bank.questions.filter((q) => q.subject === sub).length);
+          return (
+            <div className="mockcard" key={sub} style={{ "--accent": sub === "micro" ? "var(--micro)" : "var(--macro)" }}>
+              <div>
+                <span className="mk">AP {SSHORT[sub]}</span>
+                <h3>{SNAME[sub]}</h3>
+                <p>Weighted across all six units, roughly a quarter easy, half medium, a quarter hard.</p>
+                <div className="ml">
+                  <div><b className="num">{n}</b><span>questions</span></div>
+                  <div><b className="num">{Math.round(Math.min(4200, n * 70) / 60)}</b><span>minutes</span></div>
+                  <div><b className="num">70s</b><span>per question</span></div>
+                </div>
+              </div>
+              <button className="btn" onClick={() => startTest(sub)} disabled={n < 5}>
+                {n < 5 ? "Needs at least 5 questions" : "Start the test"}
+              </button>
+            </div>
+          );
+        })}
+        <div style={{ height: 50 }} />
+      </div>
+    </Shell>
   );
 }
 
@@ -1298,7 +1780,7 @@ function Results({ subject, unit, items, secs, nav }) {
   const verdict = p >= 85 ? "Strong. Move to a heavier unit." : p >= 60 ? "Close. Redo the ones you missed today, not next week." : "Read every explanation below before trying this unit again.";
   return (
     <>
-      <Nav nav={nav} active={subject} />
+      
       <div className="wrap">
         <div className="crumb">
           <button onClick={() => go({ v: "home" })}>Equilibrium</button><span>/</span>
@@ -1331,20 +1813,19 @@ function Results({ subject, unit, items, secs, nav }) {
           <button className="btn ghost" onClick={() => go({ v: "tutor" })}>Ask the tutor about a question</button>
         </div>
       </div>
-      <Foot />
     </>
   );
 }
 
 /* ---------------------------- mock exam ---------------------------- */
 
-function Mock({ subject, pool, go, onFinish }) {
+function Mock({ subject, pool, go, onFinish, nav }) {
   const [idx, setIdx] = useState(0);
   const [ans, setAns] = useState({});
-  const [flag, setFlag] = useState({});
   const [left, setLeft] = useState(Math.min(4200, pool.length * 70));
   const [grid, setGrid] = useState(false);
   const [confirm, setConfirm] = useState(false);
+  const [savedIds, setSavedIds] = useLocal("equilibrium:saved", []);
   const doneRef = useRef(false);
   const q = pool[idx];
   const answered = Object.keys(ans).length;
@@ -1354,12 +1835,12 @@ function Mock({ subject, pool, go, onFinish }) {
     doneRef.current = true;
     const items = pool.map((x) => ({ id: x.id, picked: ans[x.id] ?? null, correct: ans[x.id] === x.answer, q: x }));
     const secs = Math.min(4200, pool.length * 70) - left;
-    onFinish({ subject, unit: 0, mode: "mock", items: items.filter((i) => i.picked !== null), secs });
+    onFinish({ subject, unit: 0, mode: "test", items: items.filter((i) => i.picked !== null), secs });
     go({ v: "mockresult", subject, items, secs });
   }, [pool, ans, left, subject, onFinish, go]);
 
   useEffect(() => {
-    const t = setInterval(() => setLeft((s) => { if (s <= 1) { clearInterval(t); finish(); return 0; } return s - 1; }), 1000);
+    const t = setInterval(() => setLeft((x) => { if (x <= 1) { clearInterval(t); finish(); return 0; } return x - 1; }), 1000);
     return () => clearInterval(t);
   }, [finish]);
 
@@ -1370,7 +1851,7 @@ function Mock({ subject, pool, go, onFinish }) {
       const li = L.indexOf(e.key.toUpperCase());
       const ni = ["1", "2", "3", "4", "5", "6"].indexOf(e.key);
       const pick = li >= 0 && li < q.choices.length ? li : ni >= 0 && ni < q.choices.length ? ni : -1;
-      if (pick >= 0) { e.preventDefault(); setAns((p) => ({ ...p, [q.id]: pick })); return; }
+      if (pick >= 0) { e.preventDefault(); return setAns((p) => ({ ...p, [q.id]: pick })); }
       if (e.key === "ArrowRight" || e.key === "Enter") { e.preventDefault(); setIdx((i) => Math.min(pool.length - 1, i + 1)); }
       if (e.key === "ArrowLeft") { e.preventDefault(); setIdx((i) => Math.max(0, i - 1)); }
     };
@@ -1379,53 +1860,45 @@ function Mock({ subject, pool, go, onFinish }) {
   }, [q, pool.length, grid, confirm]);
 
   return (
-    <>
-      <div className="pbar"><div className="wrap pbin">
-        <Mark size={22} />
-        <div style={{ fontSize: 13.5, color: "var(--tx2)" }}>
-          <span className="num">{idx + 1}</span> of <span className="num">{pool.length}</span>
-          <span className="hint" style={{ marginLeft: 12 }}>{answered} answered</span>
+    <Shell nav={nav} active="test">
+      <div className="wrap" style={{ maxWidth: 820 }}>
+        <div className="crumb" style={{ justifyContent: "space-between" }}>
+          <span>Full-length test · AP {SNAME[subject]}</span>
+          <span style={{ display: "flex", gap: 12, alignItems: "center" }}>
+            <span className={"clock" + (left < 300 ? " lowtime" : "")} style={{ fontSize: 16 }}>{mmss(left)}</span>
+            <button className="mini" onClick={() => setGrid(true)}>Review</button>
+            <button className="mini" onClick={() => setConfirm(true)}>Submit</button>
+          </span>
         </div>
-        <div style={{ flex: 1 }} />
-        <div className={"clock" + (left < 300 ? " lowtime" : "")} style={{ fontSize: 16 }}>{mmss(left)}</div>
-        <button className="mini" onClick={() => setGrid(true)}>Review</button>
-        <button className="mini" onClick={() => setConfirm(true)}>Submit</button>
-      </div></div>
+        <div style={{ height: 18 }} />
+        <div className="segs" style={{ marginBottom: 22 }}>
+          {pool.map((x, i) => <div key={i} className={"seg " + (ans[x.id] !== undefined ? "seen" : i === idx ? "now" : "")}
+            style={ans[x.id] !== undefined ? { background: "var(--tx3)" } : undefined} />)}
+        </div>
 
-      <div className="qwrap">
-        <div className="qtag">
-          <span>Mock exam · AP {SNAME[subject]}</span><span className="dv" />
-          <span>Unit {q.unit}</span><span className="dv" />
-          <button className="mini" onClick={() => setFlag((p) => ({ ...p, [q.id]: !p[q.id] }))}>
-            {flag[q.id] ? "Unflag" : "Flag for review"}
-          </button>
-        </div>
-        <p className="qstem">{q.stem}</p>
-        <div className="opts">
-          {q.choices.map((c, i) => (
-            <button key={i} className={"opt" + (ans[q.id] === i ? " good" : "")}
-              onClick={() => setAns((p) => ({ ...p, [q.id]: i }))}>
-              <span className="k">{L[i]}</span><span>{c}</span>
-            </button>
-          ))}
-        </div>
-        <div className="actions">
-          <button className="btn ghost" onClick={() => setIdx((i) => Math.max(0, i - 1))} disabled={idx === 0}>Back</button>
-          {idx + 1 < pool.length
-            ? <button className="btn" onClick={() => setIdx((i) => i + 1)}>Next</button>
-            : <button className="btn acc" onClick={() => setConfirm(true)}>Finish and score</button>}
-          <span className="hint">No feedback until you submit, same as the real exam.</span>
+        <QuestionView q={q} index={idx} total={pool.length} picked={ans[q.id] ?? null} revealed={false}
+          onPick={(i) => setAns((p) => ({ ...p, [q.id]: i }))} saved={savedIds.includes(q.id)}
+          onToggleSave={() => setSavedIds((p) => (p.includes(q.id) ? p.filter((x) => x !== q.id) : [...p, q.id]))} />
+
+        <div className="qfoot">
+          <span className="hint">{answered} of {pool.length} answered · no feedback until you submit</span>
+          <span style={{ display: "flex", gap: 10 }}>
+            <button className="btn ghost" onClick={() => setIdx((i) => Math.max(0, i - 1))} disabled={idx === 0}>Back</button>
+            {idx + 1 < pool.length
+              ? <button className="btn" onClick={() => setIdx((i) => i + 1)}>Next</button>
+              : <button className="btn acc" onClick={() => setConfirm(true)}>Finish and score</button>}
+          </span>
         </div>
       </div>
 
       {grid && (
         <div className="sheet" onClick={() => setGrid(false)}>
           <div className="sheetin" onClick={(e) => e.stopPropagation()}>
-            <h2 style={{ fontSize: 20, marginBottom: 6 }}>Question map</h2>
-            <p className="hint" style={{ marginTop: 0, marginBottom: 18 }}>{answered} of {pool.length} answered. A dot marks a flagged question.</p>
+            <h2 style={{ fontSize: 21, marginBottom: 6 }}>Question map</h2>
+            <p className="hint" style={{ marginTop: 0, marginBottom: 18 }}>{answered} of {pool.length} answered. A dot marks a saved question.</p>
             <div className="qgrid">
               {pool.map((x, i) => (
-                <button key={x.id} className={"gcell" + (ans[x.id] !== undefined ? " done" : "") + (i === idx ? " now" : "") + (flag[x.id] ? " fl" : "")}
+                <button key={x.id} className={"gcell" + (ans[x.id] !== undefined ? " done" : "") + (i === idx ? " now" : "") + (savedIds.includes(x.id) ? " fl" : "")}
                   onClick={() => { setIdx(i); setGrid(false); }}>{i + 1}</button>
               ))}
             </div>
@@ -1450,7 +1923,7 @@ function Mock({ subject, pool, go, onFinish }) {
           </div>
         </div>
       )}
-    </>
+    </Shell>
   );
 }
 
@@ -1475,12 +1948,12 @@ function MockResult({ subject, items, secs, bands, nav }) {
 
   return (
     <>
-      <Nav nav={nav} active={subject} />
+      
       <div className="wrap" style={{ maxWidth: 940 }}>
         <div className="crumb">
           <button onClick={() => go({ v: "home" })}>Equilibrium</button><span>/</span>
           <button onClick={() => go({ v: "course", subject })}>AP {SNAME[subject]}</button><span>/</span>
-          <span>Mock exam</span>
+          <span>Full-length test</span>
         </div>
 
         <div style={{ display: "flex", gap: 44, alignItems: "flex-end", flexWrap: "wrap", padding: "30px 0 8px" }}>
@@ -1556,7 +2029,6 @@ function MockResult({ subject, items, secs, bands, nav }) {
           <button className="btn ghost" onClick={() => go({ v: "tutor" })}>Ask the tutor about a question</button>
         </div>
       </div>
-      <Foot />
     </>
   );
 }
@@ -1595,7 +2067,7 @@ function Tutor({ nav }) {
 
   return (
     <>
-      <Nav nav={nav} active="tutor" />
+      
       <div className="wrap" style={{ maxWidth: 860 }}>
         <div className="phead" style={{ paddingTop: 34 }}>
           <div><h1>Ask the tutor</h1>
@@ -1619,7 +2091,6 @@ function Tutor({ nav }) {
         </div>
         <div style={{ height: 46 }} />
       </div>
-      <Foot />
     </>
   );
 }

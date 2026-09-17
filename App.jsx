@@ -561,7 +561,7 @@ const CSS = `
 .eq .cbx{width:17px;height:17px;accent-color:var(--accent);cursor:pointer;}
 
 /* ---- app shell with the left rail ---- */
-.eq .shell{display:grid;grid-template-columns:70px 1fr;min-height:100vh;}
+.eq .shell{display:block;min-height:100vh;}
 /* The rail sits above the page, so opening it never shifts the content. */
 .eq .side{--sbg1:#0C544B;--sbg2:#093A34;--stx:#E4F3EF;--stx2:#9BC6BC;--shov:rgba(255,255,255,.1);
   position:fixed;left:0;top:0;bottom:0;width:70px;overflow-x:hidden;overflow-y:auto;
@@ -590,7 +590,7 @@ const CSS = `
 .eq .lbl,.eq .sdot,.eq .sgroup span{opacity:0;transition:opacity .16s;}
 .eq .side:hover .lbl,.eq .side:hover .sdot,.eq .side:hover .sgroup span,
 .eq .side:focus-within .lbl,.eq .side:focus-within .sdot,.eq .side:focus-within .sgroup span{opacity:1;}
-.eq .main{min-width:0;}
+.eq .main{min-width:0;margin-left:70px;}
 .eq .mtop{display:none;}
 
 /* ---- question surface ---- */
@@ -637,7 +637,7 @@ const CSS = `
 .eq .notepad textarea{background:var(--bg2);}
 
 @media (max-width:900px){
-  .eq .shell{grid-template-columns:1fr;}
+  .eq .main{margin-left:0;}
   .eq .side{width:250px;transform:translateX(-100%);transition:transform .25s;}
   .eq .side:hover{width:250px;}
   .eq .side.open{transform:none;}

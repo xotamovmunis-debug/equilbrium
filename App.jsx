@@ -509,21 +509,40 @@ const CSS = `
 .eq .cbx{width:17px;height:17px;accent-color:var(--accent);cursor:pointer;}
 
 /* ---- app shell with the left rail ---- */
-.eq .shell{display:grid;grid-template-columns:238px 1fr;min-height:100vh;}
-.eq .side{position:sticky;top:0;height:100vh;overflow-y:auto;background:var(--bg2);
-  border-right:1px solid var(--line);padding:18px 14px;display:flex;flex-direction:column;gap:4px;z-index:30;}
-.eq .side .brand{display:flex;align-items:center;gap:10px;background:none;border:0;padding:6px 8px 16px;}
+.eq .shell{display:grid;grid-template-columns:var(--sidew,242px) 1fr;min-height:100vh;
+  transition:grid-template-columns .22s cubic-bezier(.3,.8,.3,1);}
+.eq .side{--sbg1:#0C544B;--sbg2:#093A34;--stx:#E4F3EF;--stx2:#9BC6BC;--shov:rgba(255,255,255,.1);
+  position:sticky;top:0;height:100vh;overflow-y:auto;overflow-x:hidden;
+  background:linear-gradient(168deg,var(--sbg1),var(--sbg2));color:var(--stx);
+  border-right:1px solid rgba(255,255,255,.08);padding:16px 12px;
+  display:flex;flex-direction:column;gap:3px;z-index:30;}
+.eq.light .side{--sbg1:#0E5D53;--sbg2:#0A443D;}
+.eq .side .brand{display:flex;align-items:center;gap:10px;background:none;border:0;padding:6px 7px 14px;
+  color:var(--stx);white-space:nowrap;overflow:hidden;}
 .eq .side .brand .wm{font-size:19px;letter-spacing:-.01em;}
-.eq .sgroup{font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--tx3);
-  padding:16px 10px 6px;}
+.eq .sgroup{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--stx2);
+  padding:18px 10px 6px;white-space:nowrap;overflow:hidden;}
 .eq .sitem{display:flex;align-items:center;gap:11px;width:100%;background:none;border:0;text-align:left;
-  padding:9px 11px;border-radius:9px;font-size:14px;color:var(--tx2);transition:background .14s,color .14s;}
-.eq .sitem:hover{background:var(--surf2);color:var(--tx);}
-.eq .sitem.on{background:var(--surf2);color:var(--tx);font-weight:500;
-  box-shadow:inset 2px 0 0 var(--accent);}
-.eq .sitem svg{flex:0 0 17px;opacity:.85;}
+  padding:9px 10px;border-radius:9px;font-size:14px;color:var(--stx2);white-space:nowrap;overflow:hidden;
+  transition:background .14s,color .14s;}
+.eq .sitem:hover{background:var(--shov);color:var(--stx);}
+.eq .sitem.on{background:rgba(255,255,255,.14);color:#fff;font-weight:500;
+  box-shadow:inset 2px 0 0 rgba(255,255,255,.75);}
+.eq .sitem svg{flex:0 0 17px;}
 .eq .sitem .sdot{width:7px;height:7px;border-radius:50%;flex:0 0 7px;margin-left:5px;}
-.eq .sfoot{margin-top:auto;padding-top:16px;border-top:1px solid var(--line);}
+.eq .sfoot{margin-top:auto;padding-top:14px;border-top:1px solid rgba(255,255,255,.12);}
+.eq .side :focus-visible{outline-color:#fff;}
+
+/* collapsed rail: icons only */
+.eq .side.mini{padding:16px 8px;}
+.eq .side.mini .lbl,.eq .side.mini .sdot,.eq .side.mini .sgroup{display:none;}
+.eq .side.mini .sitem{justify-content:center;padding:11px 0;gap:0;}
+.eq .side.mini .brand{justify-content:center;padding:6px 0 14px;}
+.eq .side.mini .sgroup{height:14px;display:block;padding:0;}
+.eq .collapse{position:absolute;top:18px;right:-11px;width:22px;height:22px;border-radius:50%;
+  background:var(--sbg1);border:1px solid rgba(255,255,255,.22);color:var(--stx);
+  display:flex;align-items:center;justify-content:center;font-size:11px;z-index:2;}
+.eq .collapse:hover{background:var(--sbg2);}
 .eq .main{min-width:0;}
 .eq .mtop{display:none;}
 
@@ -1151,19 +1170,24 @@ const Icon = ({ d }) => (
 function Shell({ nav, active, children }) {
   const { go, theme, toggleTheme } = nav;
   const [open, setOpen] = useState(false);
+  const [mini, setMini] = useLocal("equilibrium:rail", false);
+
   const item = (key, label, icon, route, dot) => (
-    <button className={"sitem" + (active === key ? " on" : "")}
+    <button className={"sitem" + (active === key ? " on" : "")} title={mini ? label : undefined}
       onClick={() => { setOpen(false); go(route); }}>
-      <Icon d={icon} /><span>{label}</span>
+      <Icon d={icon} /><span className="lbl">{label}</span>
       {dot && <span className="sdot" style={{ background: dot }} />}
     </button>
   );
+
   return (
-    <div className="shell">
+    <div className="shell" style={{ "--sidew": mini ? "68px" : "242px" }}>
       {open && <div className="scrim" onClick={() => setOpen(false)} />}
-      <aside className={"side" + (open ? " open" : "")}>
+      <aside className={"side" + (open ? " open" : "") + (mini ? " mini" : "")} style={{ position: "sticky" }}>
+        <button className="collapse" onClick={() => setMini((v) => !v)}
+          aria-label={mini ? "Expand the menu" : "Collapse the menu"}>{mini ? "›" : "‹"}</button>
         <button className="brand" onClick={() => { setOpen(false); go({ v: "home" }); }}>
-          <Mark /><span className="wm">Equilibrium</span>
+          <Mark /><span className="wm lbl">Equilibrium</span>
         </button>
         {item("home", "Home", I.home, { v: "home" })}
         {item("tutor", "Ask Equi tutor", I.tutor, { v: "tutor" })}
@@ -1175,9 +1199,9 @@ function Shell({ nav, active, children }) {
         {item("bank-macro", "Question bank · Macro", I.bank, { v: "bank", subject: "macro" }, "var(--macro)")}
         {item("test", "Full-length test", I.test, { v: "tests" })}
         <div className="sfoot">
-          <button className="sitem" onClick={toggleTheme}>
+          <button className="sitem" onClick={toggleTheme} title={mini ? "Switch theme" : undefined}>
             <ThemeIcon light={theme === "light"} />
-            <span>{theme === "light" ? "Dark mode" : "Light mode"}</span>
+            <span className="lbl">{theme === "light" ? "Dark mode" : "Light mode"}</span>
           </button>
         </div>
       </aside>

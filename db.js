@@ -37,10 +37,12 @@ export async function loadBank() {
 const fromRowQ = (r) => ({
   id: r.id, subject: r.subject, unit: r.unit, topic: r.topic || "", difficulty: r.difficulty,
   stem: r.stem, choices: r.choices, answer: r.answer, explanation: r.explanation,
+  image: r.image_url || "",
 });
 const toRowQ = (q) => ({
   id: q.id, subject: q.subject, unit: q.unit, topic: q.topic || "", difficulty: q.difficulty,
   stem: q.stem, choices: q.choices, answer: q.answer, explanation: q.explanation,
+  image_url: q.image || "",
 });
 const fromRowM = (r) => ({
   id: r.id, subject: r.subject, unit: r.unit, kind: r.kind,
@@ -93,6 +95,19 @@ export async function signIn(email, password) {
   const { error } = await supabase.auth.signInWithPassword({ email, password });
   if (error) throw error;
 }
+/* Password recovery. The link lands on /reset, which Supabase must have
+   in Authentication -> URL Configuration -> Redirect URLs. */
+export async function sendReset(email) {
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${window.location.origin}/reset`,
+  });
+  if (error) throw error;
+}
+export async function updatePassword(password) {
+  const { error } = await supabase.auth.updateUser({ password });
+  if (error) throw error;
+}
+
 export async function signUp(email, password, name) {
   const { error } = await supabase.auth.signUp({
     email, password, options: { data: { name } },
@@ -147,4 +162,18 @@ export function loadMe() {
 }
 export function saveMe(me) {
   try { localStorage.setItem(LS, JSON.stringify(me)); } catch { /* private mode */ }
+}
+
+
+/* ---------------- question images ----------------
+   Files live in a public bucket, so the URL can be dropped straight into
+   the page. Only an admin may put anything there. */
+export async function uploadImage(file) {
+  const ext = (file.name.split(".").pop() || "png").toLowerCase();
+  const path = `q/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+  const { error } = await supabase.storage.from("question-images")
+    .upload(path, file, { cacheControl: "31536000", upsert: false });
+  if (error) throw error;
+  const { data } = supabase.storage.from("question-images").getPublicUrl(path);
+  return data.publicUrl;
 }

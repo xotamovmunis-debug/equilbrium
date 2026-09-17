@@ -25,6 +25,33 @@ const UNITS = {
     { n: 6, title: "Open economy: international trade and finance", weight: 11, blurb: "Balance of payments, foreign exchange markets, capital flows" },
   ],
 };
+
+/* College Board CED topic breakdown. Titles can be edited here if the
+   Board revises its wording; the numbers are what the exam uses. */
+const TOPICS = {
+  micro: {
+    1: [["1.1","Scarcity"],["1.2","Resource allocation and economic systems"],["1.3","Production possibilities curve"],["1.4","Comparative advantage and gains from trade"],["1.5","Cost-benefit analysis"],["1.6","Marginal analysis and consumer choice"]],
+    2: [["2.1","Demand"],["2.2","Supply"],["2.3","Price elasticity of demand"],["2.4","Price elasticity of supply"],["2.5","Other elasticities"],["2.6","Market equilibrium, consumer and producer surplus"],["2.7","Market disequilibrium and changes in equilibrium"],["2.8","Government intervention in markets"],["2.9","International trade and public policy"]],
+    3: [["3.1","The production function"],["3.2","Short-run production costs"],["3.3","Long-run production costs"],["3.4","Types of profit"],["3.5","Profit maximization"],["3.6","Firms' entry and exit decisions"],["3.7","Perfect competition"]],
+    4: [["4.1","Introduction to imperfectly competitive markets"],["4.2","Monopoly"],["4.3","Price discrimination"],["4.4","Monopolistic competition"],["4.5","Oligopoly and game theory"]],
+    5: [["5.1","Introduction to factor markets"],["5.2","Changes in factor demand and factor supply"],["5.3","Profit maximization in perfectly competitive factor markets"],["5.4","Monopsonistic markets"]],
+    6: [["6.1","Socially efficient and inefficient market outcomes"],["6.2","Externalities"],["6.3","Public and private goods"],["6.4","Government intervention in different market structures"],["6.5","Income and wealth inequality"]],
+  },
+  macro: {
+    1: [["1.1","Scarcity"],["1.2","Resource allocation and economic systems"],["1.3","Production possibilities curve"],["1.4","Comparative advantage and gains from trade"],["1.5","Cost-benefit analysis"],["1.6","Marginal analysis and consumer choice"]],
+    2: [["2.1","The circular flow and GDP"],["2.2","Limitations of GDP"],["2.3","Unemployment"],["2.4","Price indices and inflation"],["2.5","Costs of inflation"],["2.6","Real versus nominal GDP"],["2.7","Business cycles"]],
+    3: [["3.1","Aggregate demand"],["3.2","Multipliers"],["3.3","Short-run aggregate supply"],["3.4","Long-run aggregate supply"],["3.5","Equilibrium in the AD-AS model"],["3.6","Changes in the AD-AS model in the short run"],["3.7","Long-run self-adjustment"],["3.8","Fiscal policy"]],
+    4: [["4.1","Financial assets"],["4.2","Nominal versus real interest rates"],["4.3","Definition, measurement and functions of money"],["4.4","Banking and the expansion of the money supply"],["4.5","The money market"],["4.6","Monetary policy"],["4.7","The loanable funds market"]],
+    5: [["5.1","Fiscal and monetary policy actions in the short run"],["5.2","The Phillips curve"],["5.3","Money growth and inflation"],["5.4","Government deficits and the national debt"],["5.5","Crowding out"],["5.6","Economic growth"],["5.7","Public policy and economic growth"]],
+    6: [["6.1","Balance of payments accounts"],["6.2","Exchange rates"],["6.3","Policies and conditions in the foreign exchange market"],["6.4","Changes in the foreign exchange market and net exports"],["6.5","Real interest rates and international capital flows"]],
+  },
+};
+const topicTitle = (subject, code) => {
+  const u = Number(String(code).split(".")[0]);
+  const row = (TOPICS[subject]?.[u] || []).find((t) => t[0] === code);
+  return row ? row[1] : "";
+};
+
 const SNAME = { micro: "Microeconomics", macro: "Macroeconomics" };
 const SSHORT = { micro: "Micro", macro: "Macro" };
 const L = ["A", "B", "C", "D", "E", "F"];
@@ -442,6 +469,49 @@ const CSS = `
 .eq .bandrow .br{font-family:'JetBrains Mono',monospace;font-size:13px;}
 .eq input[type=range]{width:100%;accent-color:var(--accent);background:transparent;}
 .eq .lowtime{color:var(--no);}
+
+/* question bank */
+.eq .filters{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:22px;}
+.eq .fbtn{display:inline-flex;align-items:center;gap:8px;background:var(--surf);border:1px solid var(--line);
+  border-radius:10px;padding:8px 14px;font-size:13.5px;color:var(--tx2);}
+.eq .fbtn:hover{border-color:var(--line2);color:var(--tx);}
+.eq .fbtn.on{border-color:var(--accent);color:var(--tx);
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 45%,transparent);}
+.eq .allcard{display:flex;justify-content:space-between;align-items:center;gap:20px;flex-wrap:wrap;
+  border:1px solid var(--line);border-radius:14px;background:var(--surf);padding:20px 22px;margin-bottom:26px;}
+.eq .allcard h3{font-size:20px;}
+.eq .allcard p{font-family:'Telma',Georgia,serif;color:var(--tx2);font-size:15px;margin:6px 0 0;}
+.eq .ugroup{margin-bottom:30px;}
+.eq .ugtitle{display:flex;align-items:baseline;gap:12px;margin-bottom:10px;}
+.eq .ugtitle h3{font-size:21px;}
+.eq .ugtitle span{font-size:12px;color:var(--tx3);}
+.eq .btable{border:1px solid var(--line);border-radius:13px;overflow:hidden;background:var(--bg2);}
+.eq .bhead,.eq .brow{display:grid;grid-template-columns:26px 1fr 150px 74px;gap:16px;align-items:center;
+  padding:13px 18px;border-bottom:1px solid var(--line);}
+.eq .bhead{font-size:11.5px;color:var(--tx3);background:var(--surf);}
+.eq .brow{background:var(--bg2);transition:background .15s;text-align:left;width:100%;border-left:0;border-right:0;border-top:0;}
+.eq .brow:last-child{border-bottom:0;}
+.eq .brow:hover{background:var(--surf2);}
+.eq .brow .tp{display:flex;align-items:baseline;gap:10px;}
+.eq .brow .tc{font-family:'JetBrains Mono',monospace;font-size:12.5px;color:var(--accent);}
+.eq .brow .tt{font-size:14.5px;color:var(--tx);}
+.eq .brow.none .tt{color:var(--tx3);}
+.eq .prog{display:flex;align-items:center;gap:10px;}
+.eq .prog .bar{flex:1;height:6px;background:var(--surfhi);border-radius:3px;overflow:hidden;}
+.eq .prog .bar i{display:block;height:100%;background:var(--accent);border-radius:3px;}
+.eq .prog .n{font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--tx3);white-space:nowrap;}
+.eq .acc2{font-family:'JetBrains Mono',monospace;font-size:13.5px;text-align:right;display:flex;
+  align-items:center;justify-content:flex-end;gap:6px;}
+.eq .acc2 .pip{width:7px;height:7px;border-radius:50%;}
+.eq .selbar{position:sticky;bottom:0;z-index:20;display:flex;justify-content:space-between;align-items:center;
+  gap:18px;flex-wrap:wrap;background:var(--navbg);backdrop-filter:blur(12px);border:1px solid var(--line2);
+  border-radius:14px;padding:14px 18px;margin:8px 0 40px;box-shadow:var(--shadow);}
+.eq .cbx{width:17px;height:17px;accent-color:var(--accent);cursor:pointer;}
+@media (max-width:760px){
+  .eq .bhead{display:none;}
+  .eq .brow{grid-template-columns:24px 1fr auto;gap:12px;}
+  .eq .brow .prog{display:none;}
+}
 `;
 
 /* ---------------------------- logo + icons ---------------------------- */
@@ -619,6 +689,7 @@ function parseRoute() {
   if (p[0] === "tutor") return { v: "tutor" };
   if (p[0] === "admin") return { v: "admin" };
   if (p[0] === "micro" || p[0] === "macro") {
+    if (p[1] === "bank") return { v: "bank", subject: p[0] };
     const n = Number(p[1]);
     if (n >= 1 && n <= 6) return { v: "unit", subject: p[0], unit: n };
     return { v: "course", subject: p[0] };
@@ -635,8 +706,9 @@ export default function App() {
   const go = useCallback((r) => {
     setRoute(r);
     const path = r.v === "home" ? "/" : r.v === "course" ? `/${r.subject}`
-      : r.v === "unit" ? `/${r.subject}/${r.unit}` : r.v === "tutor" ? "/tutor"
-        : r.v === "admin" ? "/admin" : null;
+      : r.v === "bank" ? `/${r.subject}/bank`
+        : r.v === "unit" ? `/${r.subject}/${r.unit}` : r.v === "tutor" ? "/tutor"
+          : r.v === "admin" ? "/admin" : null;
     /* Practice, mock and result screens carry state in memory, so they
        deliberately leave the URL on the page the student came from. */
     if (path && path !== window.location.pathname) window.history.pushState(null, "", path);
@@ -697,7 +769,22 @@ export default function App() {
     const key = `${s.subject}-${s.unit}`;
     const cur = unit[key] || { a: 0, c: 0 };
     unit[key] = { a: cur.a + s.items.length, c: cur.c + correct };
-    const nm = { ...me, unit };
+
+    /* Topic level progress drives the question bank rows. */
+    const topic = { ...(me.topic || {}) };
+    const answered = new Set(me.answered || []);
+    const missed = new Set(me.missed || []);
+    s.items.forEach((it) => {
+      answered.add(it.id);
+      if (it.correct) missed.delete(it.id); else missed.add(it.id);
+      const code = it.q?.topic;
+      if (!code) return;
+      const k = `${s.subject}-${code}`;
+      const c = topic[k] || { a: 0, c: 0 };
+      topic[k] = { a: c.a + 1, c: c.c + (it.correct ? 1 : 0) };
+    });
+
+    const nm = { ...me, unit, topic, answered: [...answered].slice(-4000), missed: [...missed].slice(-2000) };
     setMe(nm); saveMe(nm);
   }, [me]);
 
@@ -721,6 +808,7 @@ export default function App() {
         )}
         {route.v === "home" && <Home bank={bank} me={me} nav={nav} />}
         {route.v === "course" && <Course subject={route.subject} bank={bank} me={me} nav={nav} />}
+        {route.v === "bank" && <Bank subject={route.subject} bank={bank} me={me} nav={nav} />}
         {route.v === "unit" && <UnitPage subject={route.subject} unit={route.unit} bank={bank} me={me} nav={nav} />}
         {route.v === "practice" && <Practice {...route} go={go} onFinish={recordSession} />}
         {route.v === "results" && <Results {...route} nav={nav} />}
@@ -894,8 +982,9 @@ function Course({ subject, bank, me, nav }) {
               })}
             </div>
             <div style={{ display: "flex", gap: 14, alignItems: "center", flexWrap: "wrap", marginBottom: 34 }}>
-              <button className="btn acc" onClick={mixed} disabled={!bank.questions.some((q) => q.subject === subject)}>Mixed set from all units</button>
-              <span className="hint">Up to 20 questions drawn from the whole course</span>
+              <button className="btn acc" onClick={() => go({ v: "bank", subject })}>Open the question bank</button>
+              <button className="btn ghost" onClick={mixed} disabled={!bank.questions.some((q) => q.subject === subject)}>Mixed set from all units</button>
+              <span className="hint">The bank breaks the course into the topics the exam uses</span>
             </div>
 
             <div className="mockcard">
@@ -983,6 +1072,125 @@ function UnitPage({ subject, unit, bank, me, nav }) {
           </div>
         )}
         <div style={{ height: 56 }} />
+      </div>
+      <Foot />
+    </>
+  );
+}
+
+
+/* ---------------------------- question bank ---------------------------- */
+
+const STATUS = [["all", "All questions"], ["unseen", "Not yet answered"], ["wrong", "Previously missed"]];
+
+function Bank({ subject, bank, me, nav }) {
+  const { go } = nav;
+  const [status, setStatus] = useState("all");
+  const [picked, setPicked] = useState([]);
+
+  const seen = me.topic || {};
+  const wrongIds = me.missed || [];
+
+  const pool = useMemo(() => bank.questions.filter((q) => {
+    if (q.subject !== subject) return false;
+    if (status === "wrong" && !wrongIds.includes(q.id)) return false;
+    if (status === "unseen" && (me.answered || []).includes(q.id)) return false;
+    return true;
+  }), [bank.questions, subject, status, wrongIds, me.answered]);
+
+  const forTopic = (code) => pool.filter((q) => q.topic === code);
+  const total = pool.length;
+
+  const start = (list) => { if (list.length) go({ v: "practice", subject, unit: 0, pool: shuffle(list) }); };
+  const startPicked = () => start(pool.filter((q) => picked.includes(q.topic)));
+  const toggle = (code) => setPicked((p) => (p.includes(code) ? p.filter((x) => x !== code) : [...p, code]));
+
+  const pickedCount = pool.filter((q) => picked.includes(q.topic)).length;
+
+  return (
+    <>
+      <Nav nav={nav} active={subject} />
+      <div className="wrap">
+        <div className="crumb">
+          <button onClick={() => go({ v: "home" })}>Equilibrium</button><span>/</span>
+          <button onClick={() => go({ v: "course", subject })}>AP {SNAME[subject]}</button><span>/</span>
+          <span>Question bank</span>
+        </div>
+        <div className="phead">
+          <div>
+            <h1>Question bank</h1>
+            <div className="sub">Every topic in the course outline. Tick the ones you want and practise them together, or open a single topic on its own.</div>
+          </div>
+        </div>
+
+        <div className="filters">
+          {STATUS.map(([k, v]) => (
+            <button key={k} className={"fbtn" + (status === k ? " on" : "")} onClick={() => setStatus(k)}>{v}</button>
+          ))}
+        </div>
+
+        <div className="allcard">
+          <div>
+            <h3>Practise every topic</h3>
+            <p>{total ? `${total} question${total === 1 ? "" : "s"} across all six units.` : "No questions here yet."}</p>
+          </div>
+          <button className="btn acc" disabled={!total} onClick={() => start(pool)}>Start practice</button>
+        </div>
+
+        {UNITS[subject].map((u) => {
+          const rows = TOPICS[subject][u.n] || [];
+          const unitTotal = rows.reduce((n, [code]) => n + forTopic(code).length, 0);
+          return (
+            <div className="ugroup" key={u.n}>
+              <div className="ugtitle">
+                <h3>Unit {u.n}. {u.title}</h3>
+                <span className="num">{unitTotal} question{unitTotal === 1 ? "" : "s"} · {u.weight}% of the exam</span>
+              </div>
+              <div className="btable">
+                <div className="bhead"><span /><span>Topic</span><span>Progress</span><span style={{ textAlign: "right" }}>Accuracy</span></div>
+                {rows.map(([code, title]) => {
+                  const n = forTopic(code).length;
+                  const st = seen[`${subject}-${code}`];
+                  const acc = st ? pct(st.c, st.a) : null;
+                  const done = st ? Math.min(st.a, n) : 0;
+                  return (
+                    <div className={"brow" + (n ? "" : " none")} key={code}>
+                      <input type="checkbox" className="cbx" disabled={!n} checked={picked.includes(code)}
+                        onChange={() => toggle(code)} aria-label={`Select topic ${code}`} />
+                      <button className="tp" style={{ background: "none", border: 0, padding: 0 }}
+                        disabled={!n} onClick={() => start(forTopic(code))}>
+                        <span className="tc">{code}</span>
+                        <span className="tt">{title}</span>
+                      </button>
+                      <span className="prog">
+                        <span className="bar"><i style={{ width: n ? `${(done / n) * 100}%` : "0%" }} /></span>
+                        <span className="n">{n ? `${done}/${n}` : "—"}</span>
+                      </span>
+                      <span className="acc2" style={{ color: acc === null ? "var(--tx3)" : "var(--tx)" }}>
+                        {acc !== null && <span className="pip" style={{ background: acc >= 80 ? "var(--ok)" : acc >= 55 ? "var(--micro)" : "var(--no)" }} />}
+                        {acc === null ? "—" : acc + "%"}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
+
+        {picked.length > 0 && (
+          <div className="selbar">
+            <span style={{ fontSize: 14 }}>
+              <b className="num">{picked.length}</b> topic{picked.length === 1 ? "" : "s"} selected ·{" "}
+              <b className="num">{pickedCount}</b> question{pickedCount === 1 ? "" : "s"}
+            </span>
+            <span style={{ display: "flex", gap: 10 }}>
+              <button className="btn ghost sm" onClick={() => setPicked([])}>Clear</button>
+              <button className="btn acc sm" disabled={!pickedCount} onClick={startPicked}>Start practice</button>
+            </span>
+          </div>
+        )}
+        <div style={{ height: 40 }} />
       </div>
       <Foot />
     </>
@@ -1420,7 +1628,7 @@ function Tutor({ nav }) {
    ADMIN
    ============================================================ */
 
-const BLANK_Q = { id: "", subject: "micro", unit: 1, difficulty: "medium", stem: "", choices: ["", "", "", "", ""], answer: 0, explanation: "" };
+const BLANK_Q = { id: "", subject: "micro", unit: 1, topic: "", difficulty: "medium", stem: "", choices: ["", "", "", "", ""], answer: 0, explanation: "" };
 const BLANK_M = { id: "", subject: "micro", unit: 1, kind: "note", title: "", body: "", url: "" };
 
 function Admin({ bank, setBank, refreshBank, go }) {
@@ -1652,7 +1860,7 @@ function AQuestions({ bank, refreshBank, stats }) {
             const st = stats.byQ[q.id];
             return (
               <div key={q.id} className="qitem">
-                <span className="pill">{q.subject === "micro" ? "MI" : "MA"}·{q.unit}</span>
+                <span className="pill">{q.topic || (q.subject === "micro" ? "MI" : "MA") + "·" + q.unit}</span>
                 <span>{q.stem.length > 90 ? q.stem.slice(0, 90) + "…" : q.stem}</span>
                 <span style={{ display: "flex", gap: 8, alignItems: "center" }}>
                   <span className="st num">{st ? `${pct(st.c, st.a)}% of ${st.a}` : "no data"}</span>
@@ -1678,15 +1886,22 @@ function QForm({ q, onSave, onCancel }) {
       <h2 style={{ fontSize: 23, marginBottom: 20 }}>{q.stem ? "Edit question" : "New question"}</h2>
       <div className="row3">
         <label className="field"><span>Course</span>
-          <select value={d.subject} onChange={(e) => setD((p) => ({ ...p, subject: e.target.value, unit: 1 }))}>
+          <select value={d.subject} onChange={(e) => setD((p) => ({ ...p, subject: e.target.value, unit: 1, topic: "" }))}>
             <option value="micro">Microeconomics</option><option value="macro">Macroeconomics</option></select></label>
         <label className="field"><span>Unit</span>
-          <select value={d.unit} onChange={(e) => set("unit", Number(e.target.value))}>
+          <select value={d.unit} onChange={(e) => setD((p) => ({ ...p, unit: Number(e.target.value), topic: "" }))}>
             {UNITS[d.subject].map((u) => <option key={u.n} value={u.n}>{u.n}. {u.title}</option>)}</select></label>
         <label className="field"><span>Difficulty</span>
           <select value={d.difficulty} onChange={(e) => set("difficulty", e.target.value)}>
             <option value="easy">easy</option><option value="medium">medium</option><option value="hard">hard</option></select></label>
       </div>
+      <label className="field"><span>Topic — this is what the question bank groups by</span>
+        <select value={d.topic || ""} onChange={(e) => set("topic", e.target.value)}>
+          <option value="">Not set</option>
+          {(TOPICS[d.subject][d.unit] || []).map(([code, title]) => (
+            <option key={code} value={code}>{code} {title}</option>
+          ))}
+        </select></label>
       <label className="field"><span>Question</span>
         <textarea rows={3} value={d.stem} onChange={(e) => set("stem", e.target.value)} /></label>
       <div className="field">
@@ -1717,6 +1932,7 @@ function AGenerate({ bank, refreshBank }) {
   const [subject, setSubject] = useState("micro"), [unit, setUnit] = useState(1);
   const [difficulty, setDifficulty] = useState("medium"), [count, setCount] = useState(5);
   const [topic, setTopic] = useState(""), [busy, setBusy] = useState(false);
+  const [code, setCode] = useState("");
   const [drafts, setDrafts] = useState([]), [err, setErr] = useState("");
   const u = UNITS[subject][unit - 1];
 
@@ -1726,7 +1942,7 @@ function AGenerate({ bank, refreshBank }) {
       const raw = await askClaude([{ role: "user", content:
 `Write ${count} exam-style multiple-choice questions for AP ${SNAME[subject]}, Unit ${unit}: ${u.title}.
 Content of this unit: ${u.blurb}.
-${topic ? `Focus narrowly on: ${topic}.` : ""}
+${code ? `Stay inside CED topic ${code}: ${topicTitle(subject, code)}.` : ""}\n${topic ? `Focus narrowly on: ${topic}.` : ""}
 Difficulty: ${difficulty}.
 
 Rules: five answer choices each; distractors must reflect real student errors, not filler; no "all of the above"; stems under 55 words; explanations 40-80 words saying why the answer is right and why the most tempting wrong choice is wrong.
@@ -1739,7 +1955,7 @@ Return ONLY JSON, no prose and no code fences:
       const parsed = JSON.parse(clean.slice(clean.indexOf("{"), clean.lastIndexOf("}") + 1));
       const list = (parsed.questions || []).filter((x) => x.stem && Array.isArray(x.choices) && x.choices.length >= 2);
       if (!list.length) throw new Error();
-      setDrafts(list.map((x) => ({ ...x, id: uid(), subject, unit, difficulty: x.difficulty || difficulty, answer: Number(x.answer) || 0, _keep: true })));
+      setDrafts(list.map((x) => ({ ...x, id: uid(), subject, unit, topic: code, difficulty: x.difficulty || difficulty, answer: Number(x.answer) || 0, _keep: true })));
     } catch { setErr("The draft came back unreadable. Run it again, or lower the count."); }
     setBusy(false);
   };
@@ -1756,10 +1972,10 @@ Return ONLY JSON, no prose and no code fences:
       <div className="note">Drafts are never published on their own. Review each one, untick anything weak, then add the rest.</div>
       <div className="row3">
         <label className="field"><span>Course</span>
-          <select value={subject} onChange={(e) => { setSubject(e.target.value); setUnit(1); }}>
+          <select value={subject} onChange={(e) => { setSubject(e.target.value); setUnit(1); setCode(""); }}>
             <option value="micro">Microeconomics</option><option value="macro">Macroeconomics</option></select></label>
         <label className="field"><span>Unit</span>
-          <select value={unit} onChange={(e) => setUnit(Number(e.target.value))}>
+          <select value={unit} onChange={(e) => { setUnit(Number(e.target.value)); setCode(""); }}>
             {UNITS[subject].map((x) => <option key={x.n} value={x.n}>{x.n}. {x.title}</option>)}</select></label>
         <label className="field"><span>Difficulty</span>
           <select value={difficulty} onChange={(e) => setDifficulty(e.target.value)}>
@@ -1769,7 +1985,12 @@ Return ONLY JSON, no prose and no code fences:
         <label className="field"><span>How many</span>
           <select value={count} onChange={(e) => setCount(Number(e.target.value))}>
             {[3, 5, 8, 10].map((n) => <option key={n} value={n}>{n} questions</option>)}</select></label>
-        <label className="field" style={{ gridColumn: "span 2" }}><span>Narrow the topic (optional)</span>
+        <label className="field"><span>CED topic</span>
+          <select value={code} onChange={(e) => setCode(e.target.value)}>
+            <option value="">Spread across the unit</option>
+            {(TOPICS[subject][unit] || []).map(([c, t]) => <option key={c} value={c}>{c} {t}</option>)}
+          </select></label>
+        <label className="field"><span>Narrow it further (optional)</span>
           <input type="text" value={topic} onChange={(e) => setTopic(e.target.value)} placeholder="price ceilings and deadweight loss" /></label>
       </div>
       <div className="actions" style={{ marginTop: 4 }}>

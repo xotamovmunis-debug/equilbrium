@@ -61,6 +61,7 @@ import {
   configured, loadBank, upsertQuestions, deleteQuestion, upsertMaterial, deleteMaterial,
   saveBands, recordSessionRow, loadSessions, signIn, signUp, signOut, getSession, onAuth,
   isAdmin, loadProgress, saveProgress, askTutor, loadMe, saveMe,
+  sendReset, updatePassword, uploadImage,
 } from "./db";
 
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
@@ -606,6 +607,10 @@ const CSS = `
   user-select:text;}
 .eq .qbody mark{background:color-mix(in srgb,var(--micro) 34%,transparent);color:inherit;
   border-radius:2px;padding:1px 0;cursor:pointer;}
+.eq .qfig{display:block;margin:0 0 24px;border:1px solid var(--line);border-radius:12px;overflow:hidden;
+  background:#fff;max-width:560px;}
+.eq .qfig img{display:block;width:100%;height:auto;}
+.eq .qfig:hover{border-color:var(--accent);}
 .eq .orow{display:grid;grid-template-columns:1fr 42px;gap:10px;align-items:center;margin-bottom:11px;}
 .eq .obtn{display:grid;grid-template-columns:30px 1fr;gap:14px;align-items:center;text-align:left;width:100%;
   background:var(--bg2);border:1.5px solid var(--line2);border-radius:12px;padding:14px 16px;
@@ -846,6 +851,8 @@ function Prose({ text }) {
 function parseRoute() {
   const p = (window.location.pathname || "/").toLowerCase().split("/").filter(Boolean);
   if (p[0] === "signin") return { v: "signin" };
+  if (p[0] === "forgot") return { v: "forgot" };
+  if (p[0] === "reset") return { v: "reset" };
   if (p[0] === "signup") return { v: "signup" };
   if (p[0] === "tutor") return { v: "tutor" };
   if (p[0] === "admin") return { v: "admin" };
@@ -872,6 +879,7 @@ export default function App() {
     setRoute(r);
     const path = r.v === "home" || r.v === "landing" ? "/"
       : r.v === "signin" ? "/signin" : r.v === "signup" ? "/signup"
+      : r.v === "forgot" ? "/forgot" : r.v === "reset" ? "/reset"
       : r.v === "course" ? `/${r.subject}`
       : r.v === "bank" ? `/${r.subject}/bank`
         : r.v === "planner" ? "/planner" : r.v === "analytics" ? "/analytics"
@@ -986,10 +994,12 @@ export default function App() {
     <div className={"eq" + (me.theme === "light" ? " light" : "")} style={{ "--accent": accent }}>
       <style>{CSS}</style>
       <div className="z">
-        {!user && route.v !== "admin" ? (
+        {route.v === "reset" ? <ResetPage go={go} />
+        : !user && route.v !== "admin" ? (
           route.v === "signin" || route.v === "signup"
             ? <AuthPage mode={route.v} go={go} nav={nav} />
-            : <Landing nav={nav} go={go} />
+            : route.v === "forgot" ? <ForgotPage go={go} />
+              : <Landing nav={nav} go={go} />
         ) : (<>
         {loadError && (
           <div className="wrap" style={{ paddingTop: 16 }}>
@@ -1000,7 +1010,7 @@ export default function App() {
             </div>
           </div>
         )}
-        {(route.v === "home" || route.v === "landing" || route.v === "signin" || route.v === "signup") && <Shell nav={nav} active="home"><Dashboard bank={bank} me={me} user={user} nav={nav} /></Shell>}
+        {(route.v === "home" || route.v === "landing" || route.v === "signin" || route.v === "signup" || route.v === "forgot") && <Shell nav={nav} active="home"><Dashboard bank={bank} me={me} user={user} nav={nav} /></Shell>}
         {route.v === "course" && <Shell nav={nav} active={`bank-${route.subject}`}><Course subject={route.subject} bank={bank} me={me} nav={nav} /></Shell>}
         {route.v === "bank" && <Bank subject={route.subject} bank={bank} me={me} nav={nav} />}
         {route.v === "planner" && <Planner bank={bank} me={me} nav={nav} />}
@@ -1157,11 +1167,114 @@ function AuthPage({ mode, go, nav }) {
             <button className="btn" onClick={submit} disabled={busy || !email || !pw || (isUp && !name)}>
               {busy ? <><span className="spin" /> Working</> : isUp ? "Create account" : "Log in"}
             </button>
+            {!isUp && (
+              <div className="swap" style={{ marginTop: 14 }}>
+                <button onClick={() => go({ v: "forgot" })}>Forgot your password?</button>
+              </div>
+            )}
             <div className="swap">
               {isUp
                 ? <>Already have an account? <button onClick={() => go({ v: "signin" })}>Log in</button></>
                 : <>New here? <button onClick={() => go({ v: "signup" })}>Create a free account</button></>}
             </div>
+          </>
+        )}
+      </div>
+      <div className="authart"><AuthArt /></div>
+    </div>
+  );
+}
+
+
+/* ---------------------------- password recovery ---------------------------- */
+
+function ForgotPage({ go }) {
+  const [email, setEmail] = useState(""), [sent, setSent] = useState(false);
+  const [err, setErr] = useState(""), [busy, setBusy] = useState(false);
+
+  const submit = async () => {
+    setBusy(true); setErr("");
+    try { await sendReset(email.trim()); setSent(true); }
+    catch (e) { setErr(e.message || "Could not send that. Check the address and try again."); }
+    setBusy(false);
+  };
+
+  return (
+    <div className="auth">
+      <div className="authform">
+        <button className="logo" style={{ marginBottom: 30 }} onClick={() => go({ v: "landing" })}>
+          <Mark /><span className="wm">Equilibrium</span>
+        </button>
+        {sent ? (
+          <>
+            <h1>Check your email</h1>
+            <p className="lead">If there is an account for {email}, a reset link is on its way. It expires in an hour.</p>
+            <button className="btn ghost" onClick={() => go({ v: "signin" })}>Back to log in</button>
+          </>
+        ) : (
+          <>
+            <h1>Reset your password</h1>
+            <p className="lead">Enter the email you signed up with and we will send you a link.</p>
+            <label className="field"><span>Email</span>
+              <input type="text" autoFocus value={email} onChange={(e) => { setEmail(e.target.value); setErr(""); }}
+                onKeyDown={(e) => e.key === "Enter" && submit()} placeholder="you@example.com" /></label>
+            {err && <div style={{ color: "var(--no)", fontSize: 13.5, marginBottom: 14 }}>{err}</div>}
+            <button className="btn" onClick={submit} disabled={busy || !email}>
+              {busy ? <><span className="spin" /> Sending</> : "Send the link"}
+            </button>
+            <div className="swap"><button onClick={() => go({ v: "signin" })}>Back to log in</button></div>
+          </>
+        )}
+      </div>
+      <div className="authart"><AuthArt /></div>
+    </div>
+  );
+}
+
+function ResetPage({ go }) {
+  const [pw, setPw] = useState(""), [pw2, setPw2] = useState("");
+  const [err, setErr] = useState(""), [busy, setBusy] = useState(false), [done, setDone] = useState(false);
+
+  const submit = async () => {
+    if (pw.length < 6) { setErr("Use at least six characters."); return; }
+    if (pw !== pw2) { setErr("The two passwords do not match."); return; }
+    setBusy(true); setErr("");
+    try { await updatePassword(pw); setDone(true); }
+    catch (e) {
+      setErr(e.message?.includes("session")
+        ? "This link has expired. Ask for a new one."
+        : e.message || "Could not change the password.");
+    }
+    setBusy(false);
+  };
+
+  return (
+    <div className="auth">
+      <div className="authform">
+        <button className="logo" style={{ marginBottom: 30 }} onClick={() => go({ v: "landing" })}>
+          <Mark /><span className="wm">Equilibrium</span>
+        </button>
+        {done ? (
+          <>
+            <h1>Password changed</h1>
+            <p className="lead">You are signed in with the new password.</p>
+            <button className="btn" onClick={() => go({ v: "home" })}>Go to your dashboard</button>
+          </>
+        ) : (
+          <>
+            <h1>Choose a new password</h1>
+            <p className="lead">Open this page from the link in your email, then set the password you want.</p>
+            <label className="field"><span>New password</span>
+              <input type="password" autoFocus autoComplete="new-password" value={pw}
+                onChange={(e) => { setPw(e.target.value); setErr(""); }} /></label>
+            <label className="field"><span>Repeat it</span>
+              <input type="password" autoComplete="new-password" value={pw2}
+                onChange={(e) => { setPw2(e.target.value); setErr(""); }}
+                onKeyDown={(e) => e.key === "Enter" && submit()} /></label>
+            {err && <div style={{ color: "var(--no)", fontSize: 13.5, marginBottom: 14 }}>{err}</div>}
+            <button className="btn" onClick={submit} disabled={busy || !pw || !pw2}>
+              {busy ? <><span className="spin" /> Saving</> : "Save the password"}
+            </button>
           </>
         )}
       </div>
@@ -1716,6 +1829,12 @@ function QuestionView({ q, index, total, picked, onPick, revealed, saved, onTogg
       )}
 
       <Highlightable text={q.stem} marks={marks} onAdd={addMark} onRemove={removeMark} />
+
+      {q.image && (
+        <a className="qfig" href={q.image} target="_blank" rel="noreferrer" title="Open full size">
+          <img src={q.image} alt="Figure for this question" loading="lazy" />
+        </a>
+      )}
 
       <div>
         {q.choices.map((c, i) => {
@@ -2516,7 +2635,7 @@ function Tutor({ nav }) {
    ADMIN
    ============================================================ */
 
-const BLANK_Q = { id: "", subject: "micro", unit: 1, topic: "", difficulty: "medium", stem: "", choices: ["", "", "", "", ""], answer: 0, explanation: "" };
+const BLANK_Q = { id: "", subject: "micro", unit: 1, topic: "", image: "", difficulty: "medium", stem: "", choices: ["", "", "", "", ""], answer: 0, explanation: "" };
 const BLANK_M = { id: "", subject: "micro", unit: 1, kind: "note", title: "", body: "", url: "" };
 
 function Admin({ bank, setBank, refreshBank, go, admin }) {
@@ -2752,7 +2871,7 @@ function AQuestions({ bank, refreshBank, stats }) {
             const st = stats.byQ[q.id];
             return (
               <div key={q.id} className="qitem">
-                <span className="pill">{q.topic || (q.subject === "micro" ? "MI" : "MA") + "·" + q.unit}</span>
+                <span className="pill">{q.topic || (q.subject === "micro" ? "MI" : "MA") + "·" + q.unit}{q.image ? " ▣" : ""}</span>
                 <span>{q.stem.length > 90 ? q.stem.slice(0, 90) + "…" : q.stem}</span>
                 <span style={{ display: "flex", gap: 8, alignItems: "center" }}>
                   <span className="st num">{st ? `${pct(st.c, st.a)}% of ${st.a}` : "no data"}</span>
@@ -2771,6 +2890,7 @@ function AQuestions({ bank, refreshBank, stats }) {
 
 function QForm({ q, onSave, onCancel }) {
   const [d, setD] = useState(q);
+  const [up, setUp] = useState(false), [imgErr, setImgErr] = useState("");
   const set = (k, v) => setD((p) => ({ ...p, [k]: v }));
   const valid = d.stem.trim() && d.choices.filter((c) => c.trim()).length >= 2 && d.choices[d.answer]?.trim() && d.explanation.trim();
   return (
@@ -2796,6 +2916,34 @@ function QForm({ q, onSave, onCancel }) {
         </select></label>
       <label className="field"><span>Question</span>
         <textarea rows={3} value={d.stem} onChange={(e) => set("stem", e.target.value)} /></label>
+
+      <div className="field">
+        <span>Figure — a graph or table, shown under the question</span>
+        {d.image ? (
+          <div style={{ display: "flex", gap: 14, alignItems: "flex-start" }}>
+            <img src={d.image} alt="" style={{ maxWidth: 240, borderRadius: 10, border: "1px solid var(--line)" }} />
+            <button className="mini danger" onClick={() => set("image", "")}>Remove</button>
+          </div>
+        ) : (
+          <>
+            <input type="file" accept="image/png,image/jpeg,image/webp,image/gif"
+              onChange={async (e) => {
+                const f = e.target.files?.[0];
+                if (!f) return;
+                if (f.size > 4 * 1024 * 1024) { setImgErr("That file is over 4 MB. Shrink it first."); return; }
+                setImgErr(""); setUp(true);
+                try { set("image", await uploadImage(f)); }
+                catch (er) { setImgErr(er.message || "Upload failed. Is the storage bucket set up?"); }
+                setUp(false);
+              }} />
+            {up && <div className="hint" style={{ marginTop: 8 }}><span className="spin" /> Uploading</div>}
+            {imgErr && <div style={{ color: "var(--no)", fontSize: 13, marginTop: 8 }}>{imgErr}</div>}
+            <input type="text" style={{ marginTop: 10 }} value={d.image}
+              onChange={(e) => set("image", e.target.value)} placeholder="…or paste an image URL" />
+          </>
+        )}
+      </div>
+
       <div className="field">
         <span>Answer choices — mark the correct one</span>
         {d.choices.map((c, i) => (

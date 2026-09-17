@@ -9,20 +9,20 @@ import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 
 const UNITS = {
   micro: [
-    { n: 1, title: "Basic economic concepts", weight: 13, blurb: "Scarcity, opportunity cost, PPC, comparative advantage, marginal analysis" },
-    { n: 2, title: "Supply and demand", weight: 22, blurb: "Shifts, equilibrium, elasticity, price controls, consumer and producer surplus" },
-    { n: 3, title: "Production, cost, and perfect competition", weight: 23, blurb: "Short-run cost curves, profit maximization, shutdown, long-run entry and exit" },
-    { n: 4, title: "Imperfect competition", weight: 18, blurb: "Monopoly, price discrimination, monopolistic competition, oligopoly, game theory" },
-    { n: 5, title: "Factor markets", weight: 11, blurb: "Derived demand, marginal revenue product, least-cost hiring, monopsony" },
-    { n: 6, title: "Market failure and the role of government", weight: 10, blurb: "Externalities, public goods, taxes and subsidies, inequality" },
+    { n: 1, title: "Supply, demand and elasticity", weight: 13, blurb: "Trade, supply and demand, elasticity, marginal analysis" },
+    { n: 2, title: "Surplus, taxes and trade", weight: 22, blurb: "Surpluses, deadweight loss, price controls, taxes, tariffs" },
+    { n: 3, title: "Production, cost and perfect competition", weight: 23, blurb: "Production function, cost curves, economies of scale, perfect competition" },
+    { n: 4, title: "Imperfect competition", weight: 18, blurb: "Monopoly, price discrimination, oligopoly, game theory, monopolistic competition" },
+    { n: 5, title: "Factor markets", weight: 11, blurb: "Factor market basics, resource combinations, monopsony" },
+    { n: 6, title: "Market failure and inequality", weight: 10, blurb: "Externalities, types of goods, government intervention, inequality" },
   ],
   macro: [
-    { n: 1, title: "Basic economic concepts", weight: 8, blurb: "Scarcity, PPC, comparative advantage, the circular flow model" },
-    { n: 2, title: "Economic indicators and the business cycle", weight: 14, blurb: "GDP, unemployment, inflation, real versus nominal, the business cycle" },
-    { n: 3, title: "National income and price determination", weight: 22, blurb: "AD, SRAS, LRAS, multipliers, output gaps, fiscal policy" },
-    { n: 4, title: "Financial sector", weight: 20, blurb: "Money, banking, the money market, loanable funds, monetary policy" },
-    { n: 5, title: "Long-run consequences of stabilization policies", weight: 25, blurb: "Phillips curve, crowding out, deficits, long-run growth" },
-    { n: 6, title: "Open economy: international trade and finance", weight: 11, blurb: "Balance of payments, foreign exchange markets, capital flows" },
+    { n: 1, title: "Basic economic concepts", weight: 8, blurb: "PPC, opportunity cost, comparative advantage" },
+    { n: 2, title: "Economic indicators and the business cycle", weight: 14, blurb: "GDP, unemployment, inflation, the business cycle" },
+    { n: 3, title: "National income and price determination", weight: 22, blurb: "AD-AS, multipliers, fiscal policy and automatic stabilizers" },
+    { n: 4, title: "Financial sector", weight: 20, blurb: "Money, balance sheets, money market, monetary policy, loanable funds" },
+    { n: 5, title: "Long-run consequences of stabilization policies", weight: 25, blurb: "Phillips curve, quantity theory, debt, crowding out, growth" },
+    { n: 6, title: "Open economy: international trade and finance", weight: 11, blurb: "Balance of payments, foreign exchange, capital flows" },
   ],
 };
 
@@ -30,20 +30,20 @@ const UNITS = {
    Board revises its wording; the numbers are what the exam uses. */
 const TOPICS = {
   micro: {
-    1: [["1.1","Scarcity"],["1.2","Resource allocation and economic systems"],["1.3","Production possibilities curve"],["1.4","Comparative advantage and gains from trade"],["1.5","Cost-benefit analysis"],["1.6","Marginal analysis and consumer choice"]],
-    2: [["2.1","Demand"],["2.2","Supply"],["2.3","Price elasticity of demand"],["2.4","Price elasticity of supply"],["2.5","Other elasticities"],["2.6","Market equilibrium, consumer and producer surplus"],["2.7","Market disequilibrium and changes in equilibrium"],["2.8","Government intervention in markets"],["2.9","International trade and public policy"]],
-    3: [["3.1","The production function"],["3.2","Short-run production costs"],["3.3","Long-run production costs"],["3.4","Types of profit"],["3.5","Profit maximization"],["3.6","Firms' entry and exit decisions"],["3.7","Perfect competition"]],
-    4: [["4.1","Introduction to imperfectly competitive markets"],["4.2","Monopoly"],["4.3","Price discrimination"],["4.4","Monopolistic competition"],["4.5","Oligopoly and game theory"]],
-    5: [["5.1","Introduction to factor markets"],["5.2","Changes in factor demand and factor supply"],["5.3","Profit maximization in perfectly competitive factor markets"],["5.4","Monopsonistic markets"]],
-    6: [["6.1","Socially efficient and inefficient market outcomes"],["6.2","Externalities"],["6.3","Public and private goods"],["6.4","Government intervention in different market structures"],["6.5","Income and wealth inequality"]],
+    1: [["1.1","Trade, supply and demand"],["1.2","Elasticity"],["1.3","Marginal analysis"]],
+    2: [["2.1","Surpluses, deadweight loss and price controls"],["2.2","Taxes"],["2.3","Trade and tariffs"]],
+    3: [["3.1","Production function"],["3.2","Revenue, cost, profit and cost curves"],["3.3","Short run and long run, SRATC and LRATC, economies of scale"],["3.4","Perfect competition"]],
+    4: [["4.1","Monopoly and price discrimination"],["4.2","Oligopoly and game theory"],["4.3","Monopolistic competition"]],
+    5: [["5.1","Factor markets intro and perfect competition"],["5.2","Resource combinations and monopsony"]],
+    6: [["6.1","Externalities and efficiency"],["6.2","Types of goods, government intervention, inequality"]],
   },
   macro: {
-    1: [["1.1","Scarcity"],["1.2","Resource allocation and economic systems"],["1.3","Production possibilities curve"],["1.4","Comparative advantage and gains from trade"],["1.5","Cost-benefit analysis"],["1.6","Marginal analysis and consumer choice"]],
-    2: [["2.1","The circular flow and GDP"],["2.2","Limitations of GDP"],["2.3","Unemployment"],["2.4","Price indices and inflation"],["2.5","Costs of inflation"],["2.6","Real versus nominal GDP"],["2.7","Business cycles"]],
-    3: [["3.1","Aggregate demand"],["3.2","Multipliers"],["3.3","Short-run aggregate supply"],["3.4","Long-run aggregate supply"],["3.5","Equilibrium in the AD-AS model"],["3.6","Changes in the AD-AS model in the short run"],["3.7","Long-run self-adjustment"],["3.8","Fiscal policy"]],
-    4: [["4.1","Financial assets"],["4.2","Nominal versus real interest rates"],["4.3","Definition, measurement and functions of money"],["4.4","Banking and the expansion of the money supply"],["4.5","The money market"],["4.6","Monetary policy"],["4.7","The loanable funds market"]],
-    5: [["5.1","Fiscal and monetary policy actions in the short run"],["5.2","The Phillips curve"],["5.3","Money growth and inflation"],["5.4","Government deficits and the national debt"],["5.5","Crowding out"],["5.6","Economic growth"],["5.7","Public policy and economic growth"]],
-    6: [["6.1","Balance of payments accounts"],["6.2","Exchange rates"],["6.3","Policies and conditions in the foreign exchange market"],["6.4","Changes in the foreign exchange market and net exports"],["6.5","Real interest rates and international capital flows"]],
+    1: [["1.1","PPC, opportunity cost and comparative advantage"]],
+    2: [["2.1","GDP"],["2.2","Unemployment"],["2.3","Inflation"],["2.4","Business cycle"]],
+    3: [["3.1","AD-AS model"],["3.2","Long-run adjustments, propensities and multipliers"],["3.3","Fiscal policy and automatic stabilizers"]],
+    4: [["4.1","Financial assets and money"],["4.2","Balance sheets and the money multiplier"],["4.3","Money market"],["4.4","Monetary policy and the loanable funds market"]],
+    5: [["5.1","Policy interactions, Phillips curve, quantity theory"],["5.2","National budget and debt, crowding out, economic growth"]],
+    6: [["6.1","Balance of payments"],["6.2","Foreign exchange market"],["6.3","FOREX, net exports, interest rates and capital flows"]],
   },
 };
 const topicTitle = (subject, code) => {
@@ -633,6 +633,23 @@ const CSS = `
 .eq .qfoot{position:sticky;bottom:0;display:flex;justify-content:space-between;align-items:center;gap:14px;
   flex-wrap:wrap;background:var(--navbg);backdrop-filter:blur(12px);border-top:1px solid var(--line);
   padding:14px 0;margin-top:30px;}
+.eq .timer{display:flex;flex-direction:column;align-items:center;gap:8px;padding:10px 0 22px;}
+.eq .timer .digits{font-family:'JetBrains Mono',monospace;font-size:30px;font-weight:600;
+  letter-spacing:.02em;line-height:1;}
+.eq .timer .digits.hid{visibility:hidden;}
+.eq .timer .tctl{display:flex;gap:8px;align-items:center;}
+.eq .tbtn2{width:30px;height:30px;border-radius:50%;border:1px solid var(--line2);background:var(--bg2);
+  color:var(--tx2);display:flex;align-items:center;justify-content:center;}
+.eq .tbtn2:hover{color:var(--tx);border-color:var(--tx3);}
+.eq .tpill{border:1px solid var(--line2);background:var(--bg2);color:var(--tx2);border-radius:999px;
+  padding:5px 14px;font-size:12.5px;}
+.eq .tpill:hover{color:var(--tx);border-color:var(--tx3);}
+
+.eq .hlpop{position:absolute;z-index:50;display:flex;gap:9px;align-items:center;background:var(--bg2);
+  border:1px solid var(--line2);border-radius:999px;padding:7px 11px;box-shadow:var(--shadow);}
+.eq .swatch{width:20px;height:20px;border-radius:50%;border:1.5px solid rgba(0,0,0,.28);}
+.eq .swatch:hover{transform:scale(1.12);}
+.eq .qbody{position:relative;}
 .eq .notepad{border:1px solid var(--line);border-radius:12px;background:var(--surf);padding:14px;margin-bottom:22px;}
 .eq .notepad textarea{background:var(--bg2);}
 
@@ -1545,12 +1562,15 @@ function useLocal(key, initial) {
   return [v, set];
 }
 
+const HL_COLORS = ["#FCE588", "#BFDCF5", "#F8CCE0"];
+
 function Highlightable({ text, marks, onAdd, onRemove }) {
   const ref = useRef(null);
+  const [pop, setPop] = useState(null);
 
   const grab = () => {
     const sel = window.getSelection();
-    if (!sel || sel.isCollapsed || !ref.current) return;
+    if (!sel || sel.isCollapsed || !ref.current) { setPop(null); return; }
     const range = sel.getRangeAt(0);
     if (!ref.current.contains(range.commonAncestorContainer)) return;
     const pre = range.cloneRange();
@@ -1558,17 +1578,24 @@ function Highlightable({ text, marks, onAdd, onRemove }) {
     pre.setEnd(range.startContainer, range.startOffset);
     const start = pre.toString().length;
     const end = start + range.toString().length;
-    if (end > start) onAdd({ start, end });
-    sel.removeAllRanges();
+    if (end <= start) return;
+    const r = range.getBoundingClientRect();
+    const box = ref.current.getBoundingClientRect();
+    setPop({ start, end, x: r.left - box.left + r.width / 2, y: r.top - box.top - 44 });
   };
 
-  /* Merge overlaps so repeated passes never nest. */
+  const apply = (c) => {
+    onAdd({ start: pop.start, end: pop.end, c });
+    window.getSelection()?.removeAllRanges();
+    setPop(null);
+  };
+
   const pieces = useMemo(() => {
     const sorted = [...marks].sort((a, b) => a.start - b.start);
     const merged = [];
     sorted.forEach((m) => {
       const last = merged[merged.length - 1];
-      if (last && m.start <= last.end) last.end = Math.max(last.end, m.end);
+      if (last && m.start <= last.end && last.c === m.c) last.end = Math.max(last.end, m.end);
       else merged.push({ ...m });
     });
     const out = [];
@@ -1576,7 +1603,7 @@ function Highlightable({ text, marks, onAdd, onRemove }) {
     merged.forEach((m) => {
       if (m.start > at) out.push({ t: text.slice(at, m.start) });
       out.push({ t: text.slice(m.start, m.end), hl: m });
-      at = m.end;
+      at = Math.max(at, m.end);
     });
     if (at < text.length) out.push({ t: text.slice(at) });
     return out;
@@ -1585,9 +1612,37 @@ function Highlightable({ text, marks, onAdd, onRemove }) {
   return (
     <p className="qbody" ref={ref} onMouseUp={grab} onTouchEnd={grab}>
       {pieces.map((p, i) => p.hl
-        ? <mark key={i} title="Click to remove" onClick={() => onRemove(p.hl)}>{p.t}</mark>
+        ? <mark key={i} style={{ background: p.hl.c || HL_COLORS[0], color: "#12171F" }}
+          title="Click to remove" onClick={() => onRemove(p.hl)}>{p.t}</mark>
         : <span key={i}>{p.t}</span>)}
+      {pop && (
+        <span className="hlpop" style={{ left: Math.max(0, pop.x - 58), top: Math.max(-10, pop.y) }}
+          onMouseDown={(e) => e.preventDefault()}>
+          {HL_COLORS.map((c) => (
+            <button key={c} className="swatch" style={{ background: c }} onClick={() => apply(c)}
+              aria-label="Highlight in this colour" />
+          ))}
+        </span>
+      )}
     </p>
+  );
+}
+
+
+function Timer({ seconds, paused, onToggle }) {
+  const [hidden, setHidden] = useState(false);
+  return (
+    <div className="timer">
+      <div className={"digits" + (hidden ? " hid" : "")}>{mmss(seconds)}</div>
+      <div className="tctl">
+        <button className="tbtn2" onClick={onToggle} aria-label={paused ? "Resume the timer" : "Pause the timer"}>
+          {paused
+            ? <svg width="11" height="12" viewBox="0 0 11 12" fill="currentColor"><path d="M0 0l11 6-11 6z" /></svg>
+            : <svg width="10" height="12" viewBox="0 0 10 12" fill="currentColor"><rect width="3.2" height="12" rx="1" /><rect x="6.8" width="3.2" height="12" rx="1" /></svg>}
+        </button>
+        <button className="tpill" onClick={() => setHidden((v) => !v)}>{hidden ? "Show" : "Hide"}</button>
+      </div>
+    </div>
   );
 }
 
@@ -1790,12 +1845,17 @@ function Practice({ subject, unit, pool, go, onFinish, nav }) {
   const [revealed, setRevealed] = useState(false);
   const [items, setItems] = useState([]);
   const [secs, setSecs] = useState(0);
+  const [paused, setPaused] = useState(false);
   const [help, setHelp] = useState(null);
   const [helping, setHelping] = useState(false);
   const [savedIds, setSavedIds] = useLocal("equilibrium:saved", []);
   const q = pool[idx];
 
-  useEffect(() => { const t = setInterval(() => setSecs((x) => x + 1), 1000); return () => clearInterval(t); }, []);
+  useEffect(() => {
+    if (paused) return;
+    const t = setInterval(() => setSecs((x) => x + 1), 1000);
+    return () => clearInterval(t);
+  }, [paused]);
 
   const check = useCallback(() => {
     if (picked === null || revealed) return;
@@ -1848,13 +1908,10 @@ function Practice({ subject, unit, pool, go, onFinish, nav }) {
             <button onClick={() => go({ v: "bank", subject })}>Question bank</button>
             <span>/</span><span>{label}</span>
           </span>
-          <span style={{ display: "flex", gap: 12, alignItems: "center" }}>
-            <span className="clock">{mmss(secs)}</span>
-            <button className="mini" onClick={() => go({ v: "bank", subject })}>End set</button>
-          </span>
+          <button className="mini" onClick={() => go({ v: "bank", subject })}>End set</button>
         </div>
 
-        <div style={{ height: 18 }} />
+        <Timer seconds={secs} paused={paused} onToggle={() => setPaused((v) => !v)} />
         <div className="segs" style={{ marginBottom: 22 }}>
           {pool.map((_, i) => {
             const r = items[i];
@@ -2198,13 +2255,14 @@ function Mock({ subject, pool, go, onFinish, nav }) {
       <div className="wrap" style={{ maxWidth: 820 }}>
         <div className="crumb" style={{ justifyContent: "space-between" }}>
           <span>Full-length test · AP {SNAME[subject]}</span>
-          <span style={{ display: "flex", gap: 12, alignItems: "center" }}>
-            <span className={"clock" + (left < 300 ? " lowtime" : "")} style={{ fontSize: 16 }}>{mmss(left)}</span>
+          <span style={{ display: "flex", gap: 10, alignItems: "center" }}>
             <button className="mini" onClick={() => setGrid(true)}>Review</button>
             <button className="mini" onClick={() => setConfirm(true)}>Submit</button>
           </span>
         </div>
-        <div style={{ height: 18 }} />
+        <div className="timer">
+          <div className={"digits" + (left < 300 ? " lowtime" : "")}>{mmss(left)}</div>
+        </div>
         <div className="segs" style={{ marginBottom: 22 }}>
           {pool.map((x, i) => <div key={i} className={"seg " + (ans[x.id] !== undefined ? "seen" : i === idx ? "now" : "")}
             style={ans[x.id] !== undefined ? { background: "var(--tx3)" } : undefined} />)}

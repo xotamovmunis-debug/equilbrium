@@ -35,11 +35,11 @@ export async function loadBank() {
 }
 
 const fromRowQ = (r) => ({
-  id: r.id, subject: r.subject, unit: r.unit, difficulty: r.difficulty,
+  id: r.id, subject: r.subject, unit: r.unit, topic: r.topic || "", difficulty: r.difficulty,
   stem: r.stem, choices: r.choices, answer: r.answer, explanation: r.explanation,
 });
 const toRowQ = (q) => ({
-  id: q.id, subject: q.subject, unit: q.unit, difficulty: q.difficulty,
+  id: q.id, subject: q.subject, unit: q.unit, topic: q.topic || "", difficulty: q.difficulty,
   stem: q.stem, choices: q.choices, answer: q.answer, explanation: q.explanation,
 });
 const fromRowM = (r) => ({
@@ -87,14 +87,45 @@ export async function loadSessions(limit = 1000) {
   return data || [];
 }
 
-/* Admin sign in uses Supabase Auth. Create the account once in the
-   Supabase dashboard under Authentication → Users. */
+/* ---------------- accounts ---------------- */
+
 export async function signIn(email, password) {
   const { error } = await supabase.auth.signInWithPassword({ email, password });
   if (error) throw error;
 }
+export async function signUp(email, password, name) {
+  const { error } = await supabase.auth.signUp({
+    email, password, options: { data: { name } },
+  });
+  if (error) throw error;
+}
 export const signOut = () => supabase.auth.signOut();
 export const getSession = () => supabase.auth.getSession();
+export function onAuth(cb) {
+  const { data } = supabase.auth.onAuthStateChange((_e, session) => cb(session));
+  return () => data.subscription.unsubscribe();
+}
+
+/* Admin rights live in their own table, so a student account signing in
+   never gains the ability to edit content. */
+export async function isAdmin() {
+  const { data, error } = await supabase.rpc("is_admin");
+  if (error) return false;
+  return Boolean(data);
+}
+
+/* ---------------- synced student progress ---------------- */
+
+export async function loadProgress() {
+  const { data, error } = await supabase.from("progress").select("data").maybeSingle();
+  if (error) return null;
+  return data?.data || null;
+}
+export async function saveProgress(userId, data) {
+  const { error } = await supabase.from("progress")
+    .upsert({ user_id: userId, data, updated_at: new Date().toISOString() });
+  if (error) throw error;
+}
 
 /* The tutor runs through an edge function so the Anthropic key never
    reaches the browser. If the function is not deployed this throws and

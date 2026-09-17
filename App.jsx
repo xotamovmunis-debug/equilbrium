@@ -59,8 +59,8 @@ const L = ["A", "B", "C", "D", "E", "F"];
 import { supabase } from "./db";
 import {
   configured, loadBank, upsertQuestions, deleteQuestion, upsertMaterial, deleteMaterial,
-  saveBands, recordSessionRow, loadSessions, signIn, signOut, getSession, askTutor,
-  loadMe, saveMe,
+  saveBands, recordSessionRow, loadSessions, signIn, signUp, signOut, getSession, onAuth,
+  isAdmin, loadProgress, saveProgress, askTutor, loadMe, saveMe,
 } from "./db";
 
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
@@ -200,8 +200,13 @@ const CSS = `
   background-clip:text;color:transparent;}
 .eq .hero p{font-family:'Telma',Georgia,serif;color:var(--tx2);font-size:19px;line-height:1.6;margin:22px 0 0;max-width:42ch;}
 .eq .heroact{display:flex;gap:12px;margin-top:32px;flex-wrap:wrap;}
-.eq .plotbox{position:relative;border:1px solid var(--line);border-radius:16px;overflow:hidden;
-  background:linear-gradient(180deg,var(--surf),var(--bg2));box-shadow:var(--shadow);}
+.eq .plotbox{position:relative;border:1px solid rgba(255,255,255,.1);border-radius:16px;overflow:hidden;
+  background:linear-gradient(168deg,#0C544B,#093A34);box-shadow:var(--shadow);}
+.eq .plotbox .readout{border-top-color:rgba(255,255,255,.14);}
+.eq .plotbox .readout div + div{border-left-color:rgba(255,255,255,.14);}
+.eq .plotbox .readout .k{color:#9BC6BC;}
+.eq .plotbox .readout .v{color:#EAF6F3;}
+.eq .plotbox .draghint{background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.2);color:#DCEFEA;}
 .eq .plotbox svg{display:block;width:100%;height:auto;}
 .eq .readout{display:flex;border-top:1px solid var(--line);}
 .eq .readout div{flex:1;padding:12px 16px;}
@@ -259,11 +264,11 @@ const CSS = `
 .eq .course .cstats b{display:block;font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:600;}
 .eq .course .cstats span{font-size:11.5px;color:var(--tx3);}
 
-.eq .feats{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);
-  border:1px solid var(--line);border-radius:14px;overflow:hidden;margin:34px 0 70px;}
-.eq .feat{background:var(--bg2);padding:24px 22px;}
-.eq .feat h3{font-size:18px;}
-.eq .feat p{font-family:'Telma',Georgia,serif;color:var(--tx2);font-size:15px;margin:8px 0 0;line-height:1.55;}
+.eq .feats{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:rgba(255,255,255,.12);
+  border:1px solid rgba(255,255,255,.1);border-radius:14px;overflow:hidden;margin:34px 0 70px;}
+.eq .feat{background:linear-gradient(168deg,#0C544B,#093A34);padding:26px 24px;color:#E4F3EF;}
+.eq .feat h3{font-size:18px;color:#fff;}
+.eq .feat p{font-family:'Telma',Georgia,serif;color:#A8CFC7;font-size:15px;margin:8px 0 0;line-height:1.55;}
 
 .eq .crumb{display:flex;align-items:center;gap:9px;font-size:13px;color:var(--tx3);padding:26px 0 0;flex-wrap:wrap;}
 .eq .crumb button{background:none;border:0;padding:0;color:var(--tx3);}
@@ -470,6 +475,53 @@ const CSS = `
 .eq input[type=range]{width:100%;accent-color:var(--accent);background:transparent;}
 .eq .lowtime{color:var(--no);}
 
+/* ---- landing, auth and dashboard ---- */
+.eq .lnav{display:flex;align-items:center;justify-content:space-between;height:70px;}
+.eq .land{max-width:1120px;margin:0 auto;padding:0 24px;}
+.eq .lhero{display:grid;grid-template-columns:1.05fr .95fr;gap:56px;align-items:center;padding:56px 0 70px;}
+.eq .lhero h1{font-size:clamp(40px,5.4vw,66px);line-height:1.02;}
+.eq .lhero .ul{position:relative;white-space:nowrap;}
+.eq .lhero .ul::after{content:'';position:absolute;left:0;right:0;bottom:-2px;height:4px;border-radius:3px;
+  background:linear-gradient(90deg,var(--micro),var(--macro));}
+.eq .lhero p{font-family:'Telma',Georgia,serif;color:var(--tx2);font-size:19px;line-height:1.55;
+  margin:24px 0 0;max-width:42ch;}
+
+.eq .auth{display:grid;grid-template-columns:1fr 1fr;min-height:100vh;}
+.eq .authform{display:flex;flex-direction:column;justify-content:center;padding:40px 8vw;max-width:620px;
+  width:100%;margin:0 auto;}
+.eq .authform h1{font-size:34px;margin-bottom:8px;}
+.eq .authform .lead{font-family:'Telma',Georgia,serif;color:var(--tx2);font-size:16px;margin:0 0 28px;}
+.eq .authart{background:linear-gradient(168deg,#0C544B,#093A34);display:flex;align-items:center;
+  justify-content:center;padding:40px;}
+.eq .authart svg{width:100%;max-width:440px;height:auto;}
+.eq .swap{font-size:14px;color:var(--tx3);margin-top:22px;text-align:center;}
+.eq .swap button{background:none;border:0;color:var(--tx);font-weight:600;padding:0;}
+.eq .swap button:hover{color:var(--accent);}
+
+.eq .dash{display:grid;grid-template-columns:1fr 340px;gap:26px;align-items:start;}
+.eq .greet{font-size:clamp(26px,3.4vw,36px);margin-bottom:6px;}
+.eq .greet em{font-style:normal;color:var(--accent);}
+.eq .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);
+  border:1px solid var(--line);border-radius:14px;overflow:hidden;margin:22px 0 26px;}
+.eq .kpi2{background:var(--bg2);padding:18px 16px;}
+.eq .kpi2 .v{font-family:'JetBrains Mono',monospace;font-size:26px;font-weight:600;line-height:1;}
+.eq .kpi2 .l{font-size:11.5px;color:var(--tx3);margin-top:7px;}
+.eq .panel{border:1px solid var(--line);border-radius:14px;background:var(--bg2);padding:22px;margin-bottom:20px;}
+.eq .panel h3{font-size:19px;margin-bottom:4px;}
+.eq .panel .ptext{font-family:'Telma',Georgia,serif;color:var(--tx2);font-size:15px;margin:8px 0 16px;}
+.eq .nextrow{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:11px 0;
+  border-bottom:1px solid var(--line);font-size:14px;width:100%;background:none;border-left:0;border-right:0;
+  border-top:0;text-align:left;}
+.eq .nextrow:last-child{border-bottom:0;}
+.eq .nextrow:hover{color:var(--accent);}
+@media (max-width:900px){
+  .eq .lhero{grid-template-columns:1fr;gap:34px;padding:34px 0 46px;}
+  .eq .auth{grid-template-columns:1fr;}
+  .eq .authart{display:none;}
+  .eq .dash{grid-template-columns:1fr;}
+  .eq .kpis{grid-template-columns:1fr 1fr;}
+}
+
 /* question bank */
 .eq .filters{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:22px;}
 .eq .fbtn{display:inline-flex;align-items:center;gap:8px;background:var(--surf);border:1px solid var(--line);
@@ -509,40 +561,35 @@ const CSS = `
 .eq .cbx{width:17px;height:17px;accent-color:var(--accent);cursor:pointer;}
 
 /* ---- app shell with the left rail ---- */
-.eq .shell{display:grid;grid-template-columns:var(--sidew,242px) 1fr;min-height:100vh;
-  transition:grid-template-columns .22s cubic-bezier(.3,.8,.3,1);}
+.eq .shell{display:grid;grid-template-columns:70px 1fr;min-height:100vh;}
+/* The rail sits above the page, so opening it never shifts the content. */
 .eq .side{--sbg1:#0C544B;--sbg2:#093A34;--stx:#E4F3EF;--stx2:#9BC6BC;--shov:rgba(255,255,255,.1);
-  position:sticky;top:0;height:100vh;overflow-y:auto;overflow-x:hidden;
+  position:fixed;left:0;top:0;bottom:0;width:70px;overflow-x:hidden;overflow-y:auto;
   background:linear-gradient(168deg,var(--sbg1),var(--sbg2));color:var(--stx);
-  border-right:1px solid rgba(255,255,255,.08);padding:16px 12px;
-  display:flex;flex-direction:column;gap:3px;z-index:30;}
+  border-right:1px solid rgba(255,255,255,.08);padding:16px 10px;
+  display:flex;flex-direction:column;gap:3px;z-index:40;
+  transition:width .2s cubic-bezier(.3,.8,.3,1),box-shadow .2s;}
+.eq .side:hover,.eq .side:focus-within{width:244px;box-shadow:24px 0 50px -20px rgba(0,0,0,.55);}
 .eq.light .side{--sbg1:#0E5D53;--sbg2:#0A443D;}
-.eq .side .brand{display:flex;align-items:center;gap:10px;background:none;border:0;padding:6px 7px 14px;
-  color:var(--stx);white-space:nowrap;overflow:hidden;}
+.eq .side .brand{display:flex;align-items:center;gap:11px;background:none;border:0;padding:6px 8px 14px;
+  color:var(--stx);white-space:nowrap;}
 .eq .side .brand .wm{font-size:19px;letter-spacing:-.01em;}
 .eq .sgroup{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--stx2);
-  padding:18px 10px 6px;white-space:nowrap;overflow:hidden;}
-.eq .sitem{display:flex;align-items:center;gap:11px;width:100%;background:none;border:0;text-align:left;
-  padding:9px 10px;border-radius:9px;font-size:14px;color:var(--stx2);white-space:nowrap;overflow:hidden;
+  padding:18px 10px 6px;white-space:nowrap;height:32px;}
+.eq .sitem{display:flex;align-items:center;gap:13px;width:100%;background:none;border:0;text-align:left;
+  padding:10px 9px;border-radius:9px;font-size:14px;color:var(--stx2);white-space:nowrap;
   transition:background .14s,color .14s;}
 .eq .sitem:hover{background:var(--shov);color:var(--stx);}
 .eq .sitem.on{background:rgba(255,255,255,.14);color:#fff;font-weight:500;
   box-shadow:inset 2px 0 0 rgba(255,255,255,.75);}
-.eq .sitem svg{flex:0 0 17px;}
-.eq .sitem .sdot{width:7px;height:7px;border-radius:50%;flex:0 0 7px;margin-left:5px;}
+.eq .sitem svg{flex:0 0 18px;}
+.eq .sitem .sdot{width:7px;height:7px;border-radius:50%;flex:0 0 7px;margin-left:4px;}
 .eq .sfoot{margin-top:auto;padding-top:14px;border-top:1px solid rgba(255,255,255,.12);}
 .eq .side :focus-visible{outline-color:#fff;}
-
-/* collapsed rail: icons only */
-.eq .side.mini{padding:16px 8px;}
-.eq .side.mini .lbl,.eq .side.mini .sdot,.eq .side.mini .sgroup{display:none;}
-.eq .side.mini .sitem{justify-content:center;padding:11px 0;gap:0;}
-.eq .side.mini .brand{justify-content:center;padding:6px 0 14px;}
-.eq .side.mini .sgroup{height:14px;display:block;padding:0;}
-.eq .collapse{position:absolute;top:18px;right:-11px;width:22px;height:22px;border-radius:50%;
-  background:var(--sbg1);border:1px solid rgba(255,255,255,.22);color:var(--stx);
-  display:flex;align-items:center;justify-content:center;font-size:11px;z-index:2;}
-.eq .collapse:hover{background:var(--sbg2);}
+/* Labels fade in with the rail rather than reflowing it. */
+.eq .lbl,.eq .sdot,.eq .sgroup span{opacity:0;transition:opacity .16s;}
+.eq .side:hover .lbl,.eq .side:hover .sdot,.eq .side:hover .sgroup span,
+.eq .side:focus-within .lbl,.eq .side:focus-within .sdot,.eq .side:focus-within .sgroup span{opacity:1;}
 .eq .main{min-width:0;}
 .eq .mtop{display:none;}
 
@@ -591,9 +638,10 @@ const CSS = `
 
 @media (max-width:900px){
   .eq .shell{grid-template-columns:1fr;}
-  .eq .side{position:fixed;left:0;top:0;bottom:0;width:250px;transform:translateX(-100%);
-    transition:transform .25s;box-shadow:0 0 60px rgba(0,0,0,.5);}
+  .eq .side{width:250px;transform:translateX(-100%);transition:transform .25s;}
+  .eq .side:hover{width:250px;}
   .eq .side.open{transform:none;}
+  .eq .lbl,.eq .sdot,.eq .sgroup span{opacity:1;}
   .eq .mtop{display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--line);
     position:sticky;top:0;background:var(--navbg);backdrop-filter:blur(12px);z-index:20;}
   .eq .scrim{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:25;}
@@ -698,14 +746,14 @@ function HeroPlot() {
             <rect x={X0} y={Y0 - 14} width={X1 + 12 - X0} height={Y1 + 8 - (Y0 - 14)} />
           </clipPath>
         </defs>
-        <g stroke="var(--pgrid)" strokeWidth="1">
+        <g stroke="rgba(255,255,255,.09)" strokeWidth="1">
           {[0, 1, 2, 3, 4, 5].map((i) => <line key={"h" + i} x1={X0} y1={Y0 + i * 50} x2={X1 + 20} y2={Y0 + i * 50} />)}
           {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => <line key={"v" + i} x1={X0 + i * 62} y1={Y0 - 10} x2={X0 + i * 62} y2={Y1 + 8} />)}
         </g>
-        <line x1={X0} y1={Y0 - 12} x2={X0} y2={Y1 + 8} stroke="var(--paxis)" strokeWidth="1.4" />
-        <line x1={X0 - 8} y1={Y1 + 8} x2={X1 + 30} y2={Y1 + 8} stroke="var(--paxis)" strokeWidth="1.4" />
-        <text x={X0 - 26} y={Y0 - 2} fill="var(--tx3)" fontSize="12" fontFamily="JetBrains Mono">P</text>
-        <text x={X1 + 34} y={Y1 + 13} fill="var(--tx3)" fontSize="12" fontFamily="JetBrains Mono">Q</text>
+        <line x1={X0} y1={Y0 - 12} x2={X0} y2={Y1 + 8} stroke="rgba(255,255,255,.3)" strokeWidth="1.4" />
+        <line x1={X0 - 8} y1={Y1 + 8} x2={X1 + 30} y2={Y1 + 8} stroke="rgba(255,255,255,.3)" strokeWidth="1.4" />
+        <text x={X0 - 26} y={Y0 - 2} fill="#8FB8B0" fontSize="12" fontFamily="JetBrains Mono">P</text>
+        <text x={X1 + 34} y={Y1 + 13} fill="#8FB8B0" fontSize="12" fontFamily="JetBrains Mono">Q</text>
         <line x1={X0 + 8} y1="286" x2="540" y2="60" stroke="var(--macro)" strokeWidth="2.6" strokeLinecap="round" />
         <text x="546" y="58" fill="var(--macro)" fontSize="13" fontWeight="600" fontFamily="JetBrains Mono">S</text>
         <g className="grab" tabIndex={0} role="slider"
@@ -721,10 +769,10 @@ function HeroPlot() {
           </g>
           <text x={labelX + 8} y={labelY + 2} fill="var(--micro)" fontSize="13" fontWeight="600" fontFamily="JetBrains Mono">D</text>
         </g>
-        <line x1={X0} y1={ey} x2={ex} y2={ey} stroke="var(--paxis)" strokeWidth="1" strokeDasharray="3 4" />
-        <line x1={ex} y1={ey} x2={ex} y2={Y1 + 8} stroke="var(--paxis)" strokeWidth="1" strokeDasharray="3 4" />
+        <line x1={X0} y1={ey} x2={ex} y2={ey} stroke="rgba(255,255,255,.28)" strokeWidth="1" strokeDasharray="3 4" />
+        <line x1={ex} y1={ey} x2={ex} y2={Y1 + 8} stroke="rgba(255,255,255,.28)" strokeWidth="1" strokeDasharray="3 4" />
         <circle cx={ex} cy={ey} r="10" fill="var(--accent)" opacity=".2" />
-        <circle cx={ex} cy={ey} r="5" fill="var(--tx)" />
+        <circle cx={ex} cy={ey} r="5" fill="#FFFFFF" />
       </svg>
       <div className="draghint" style={{ opacity: held ? 0 : 1 }}>Drag the demand curve</div>
       <div className="readout">
@@ -777,6 +825,8 @@ function Prose({ text }) {
 
 function parseRoute() {
   const p = (window.location.pathname || "/").toLowerCase().split("/").filter(Boolean);
+  if (p[0] === "signin") return { v: "signin" };
+  if (p[0] === "signup") return { v: "signup" };
   if (p[0] === "tutor") return { v: "tutor" };
   if (p[0] === "admin") return { v: "admin" };
   if (p[0] === "planner") return { v: "planner" };
@@ -800,7 +850,9 @@ export default function App() {
 
   const go = useCallback((r) => {
     setRoute(r);
-    const path = r.v === "home" ? "/" : r.v === "course" ? `/${r.subject}`
+    const path = r.v === "home" || r.v === "landing" ? "/"
+      : r.v === "signin" ? "/signin" : r.v === "signup" ? "/signup"
+      : r.v === "course" ? `/${r.subject}`
       : r.v === "bank" ? `/${r.subject}/bank`
         : r.v === "planner" ? "/planner" : r.v === "analytics" ? "/analytics"
           : r.v === "saved" ? "/saved" : r.v === "tests" ? "/tests"
@@ -827,6 +879,25 @@ export default function App() {
   }, [go]);
 
   const [loadError, setLoadError] = useState("");
+  const [user, setUser] = useState(null);
+  const [authReady, setAuthReady] = useState(false);
+  const [admin, setAdmin] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      const { data } = await getSession();
+      setUser(data?.session?.user || null);
+      setAuthReady(true);
+    })();
+    return onAuth(async (session) => {
+      setUser(session?.user || null);
+      if (session?.user) {
+        const remote = await loadProgress();
+        if (remote) setMe((p) => ({ ...p, ...remote, theme: p.theme }));
+        setAdmin(await isAdmin());
+      } else setAdmin(false);
+    });
+  }, []);
 
   useEffect(() => {
     (async () => {
@@ -883,9 +954,10 @@ export default function App() {
 
     const nm = { ...me, unit, topic, answered: [...answered].slice(-4000), missed: [...missed].slice(-2000) };
     setMe(nm); saveMe(nm);
-  }, [me]);
+    if (user) { try { await saveProgress(user.id, { unit, topic, answered: nm.answered, missed: nm.missed }); } catch { /* offline */ } }
+  }, [me, user]);
 
-  if (!ready) return <div className="eq"><style>{CSS}</style><div className="wrap z" style={{ paddingTop: 90, color: "var(--tx3)" }}><span className="spin" /> Loading</div></div>;
+  if (!ready || !authReady) return <div className="eq"><style>{CSS}</style><div className="wrap z" style={{ paddingTop: 90, color: "var(--tx3)" }}><span className="spin" /> Loading</div></div>;
 
   const accent = route.subject === "micro" ? "var(--micro)" : "var(--macro)";
   const nav = { go, theme: me.theme, toggleTheme };
@@ -894,6 +966,11 @@ export default function App() {
     <div className={"eq" + (me.theme === "light" ? " light" : "")} style={{ "--accent": accent }}>
       <style>{CSS}</style>
       <div className="z">
+        {!user && route.v !== "admin" ? (
+          route.v === "signin" || route.v === "signup"
+            ? <AuthPage mode={route.v} go={go} nav={nav} />
+            : <Landing nav={nav} go={go} />
+        ) : (<>
         {loadError && (
           <div className="wrap" style={{ paddingTop: 16 }}>
             <div className="note" style={{ borderLeftColor: "var(--no)" }}>
@@ -903,7 +980,7 @@ export default function App() {
             </div>
           </div>
         )}
-        {route.v === "home" && <Shell nav={nav} active="home"><Home bank={bank} me={me} nav={nav} /></Shell>}
+        {(route.v === "home" || route.v === "landing" || route.v === "signin" || route.v === "signup") && <Shell nav={nav} active="home"><Dashboard bank={bank} me={me} user={user} nav={nav} /></Shell>}
         {route.v === "course" && <Shell nav={nav} active={`bank-${route.subject}`}><Course subject={route.subject} bank={bank} me={me} nav={nav} /></Shell>}
         {route.v === "bank" && <Bank subject={route.subject} bank={bank} me={me} nav={nav} />}
         {route.v === "planner" && <Planner bank={bank} me={me} nav={nav} />}
@@ -916,13 +993,244 @@ export default function App() {
         {route.v === "mock" && <Mock {...route} go={go} onFinish={recordSession} nav={nav} />}
         {route.v === "mockresult" && <Shell nav={nav} active="test"><MockResult {...route} bands={bank.bands} nav={nav} /></Shell>}
         {route.v === "tutor" && <Shell nav={nav} active="tutor"><Tutor nav={nav} /></Shell>}
-        {route.v === "admin" && <Admin bank={bank} setBank={setBank} refreshBank={refreshBank} go={go} />}
+        {route.v === "admin" && <Admin bank={bank} setBank={setBank} refreshBank={refreshBank} go={go} admin={admin} />}
+        </>)}
       </div>
     </div>
   );
 }
 
 /* ---------------------------- chrome ---------------------------- */
+
+
+/* ---------------------------- auth artwork ---------------------------- */
+
+function AuthArt() {
+  return (
+    <svg viewBox="0 0 420 380" role="img" aria-label="Supply and demand meeting at equilibrium above a city skyline">
+      <defs>
+        <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#0A4841" /><stop offset="100%" stopColor="#0B5A50" />
+        </linearGradient>
+      </defs>
+      <rect x="18" y="14" width="384" height="250" rx="16" fill="url(#sky)" stroke="rgba(255,255,255,.14)" />
+      <g stroke="rgba(255,255,255,.08)">
+        {[0, 1, 2, 3, 4].map((i) => <line key={i} x1="46" y1={54 + i * 42} x2="378" y2={54 + i * 42} />)}
+        {[0, 1, 2, 3, 4, 5, 6].map((i) => <line key={"v" + i} x1={62 + i * 50} y1="40" x2={62 + i * 50} y2="236" />)}
+      </g>
+      <line x1="46" y1="34" x2="46" y2="238" stroke="rgba(255,255,255,.35)" strokeWidth="1.6" />
+      <line x1="40" y1="238" x2="386" y2="238" stroke="rgba(255,255,255,.35)" strokeWidth="1.6" />
+      <line x1="62" y1="226" x2="356" y2="58" stroke="#2FC0CD" strokeWidth="3" strokeLinecap="round" />
+      <line x1="62" y1="62" x2="352" y2="228" stroke="#F0A93A" strokeWidth="3" strokeLinecap="round" />
+      <circle cx="208" cy="143" r="20" fill="#FFFFFF" opacity=".14" />
+      <circle cx="208" cy="143" r="6.5" fill="#FFFFFF" />
+      <text x="360" y="54" fill="#2FC0CD" fontSize="14" fontWeight="600" fontFamily="JetBrains Mono">S</text>
+      <text x="356" y="238" fill="#F0A93A" fontSize="14" fontWeight="600" fontFamily="JetBrains Mono">D</text>
+      <g opacity=".95">
+        <rect x="18" y="292" width="122" height="66" rx="12" fill="rgba(255,255,255,.08)" stroke="rgba(255,255,255,.16)" />
+        <text x="34" y="318" fill="#9BC6BC" fontSize="11" fontFamily="Inter">Predicted score</text>
+        <text x="34" y="344" fill="#fff" fontSize="22" fontWeight="600" fontFamily="JetBrains Mono">5</text>
+        <rect x="150" y="292" width="140" height="66" rx="12" fill="rgba(255,255,255,.08)" stroke="rgba(255,255,255,.16)" />
+        <text x="166" y="318" fill="#9BC6BC" fontSize="11" fontFamily="Inter">Topics covered</text>
+        <text x="166" y="344" fill="#fff" fontSize="22" fontWeight="600" fontFamily="JetBrains Mono">76</text>
+        <rect x="300" y="292" width="102" height="66" rx="12" fill="rgba(255,255,255,.08)" stroke="rgba(255,255,255,.16)" />
+        <text x="316" y="318" fill="#9BC6BC" fontSize="11" fontFamily="Inter">Courses</text>
+        <text x="316" y="344" fill="#fff" fontSize="22" fontWeight="600" fontFamily="JetBrains Mono">2</text>
+      </g>
+    </svg>
+  );
+}
+
+/* ---------------------------- landing ---------------------------- */
+
+function Landing({ nav, go }) {
+  return (
+    <>
+      <div className="land">
+        <div className="lnav">
+          <button className="logo" onClick={() => go({ v: "landing" })}>
+            <Mark /><span className="wm">Equilibrium</span>
+          </button>
+          <span style={{ display: "flex", gap: 10, alignItems: "center" }}>
+            <button className="tgl" onClick={nav.toggleTheme} aria-label="Switch theme">
+              <ThemeIcon light={nav.theme === "light"} />
+            </button>
+            <button className="btn ghost sm" onClick={() => go({ v: "signin" })}>Log in</button>
+          </span>
+        </div>
+
+        <div className="lhero">
+          <div>
+            <h1>Your all-in-one resource to <span className="ul">ace AP Econ</span></h1>
+            <p>Every topic in the course outline, exam-style questions with written explanations, timed full-length tests with a predicted score, and a tutor that answers in the language of the course.</p>
+            <div className="heroact">
+              <button className="btn" onClick={() => go({ v: "signup" })}>Get started for free</button>
+            </div>
+          </div>
+          <HeroPlot />
+        </div>
+
+        <div className="feats">
+          <div className="feat"><h3>Built on the course outline</h3><p>Micro and Macro split into all six units and every numbered topic, so you always know what you are practising.</p></div>
+          <div className="feat"><h3>Weighted like the real exam</h3><p>Full-length tests draw from each unit in College Board proportions and return a composite out of 90.</p></div>
+          <div className="feat"><h3>A tutor that knows the graphs</h3><p>Ask about crowding out or excess capacity and get an answer built around the curves you have to draw.</p></div>
+        </div>
+      </div>
+    </>
+  );
+}
+
+/* ---------------------------- sign up and sign in ---------------------------- */
+
+function AuthPage({ mode, go, nav }) {
+  const isUp = mode === "signup";
+  const [name, setName] = useState(""), [email, setEmail] = useState(""), [pw, setPw] = useState("");
+  const [err, setErr] = useState(""), [busy, setBusy] = useState(false), [sent, setSent] = useState(false);
+
+  const submit = async () => {
+    setBusy(true); setErr("");
+    try {
+      if (isUp) {
+        await signUp(email.trim(), pw, name.trim());
+        setSent(true);
+      } else {
+        await signIn(email.trim(), pw);
+      }
+    } catch (e) {
+      const m = e.message || "";
+      setErr(m.includes("Invalid login") ? "That email and password don't match."
+        : m.includes("already") ? "There is already an account with that email."
+          : m.includes("6 characters") ? "Use a password of at least six characters."
+            : m || "Something went wrong. Try again.");
+    }
+    setBusy(false);
+  };
+
+  return (
+    <div className="auth">
+      <div className="authform">
+        <button className="logo" style={{ marginBottom: 30 }} onClick={() => go({ v: "landing" })}>
+          <Mark /><span className="wm">Equilibrium</span>
+        </button>
+        {sent ? (
+          <>
+            <h1>Check your email</h1>
+            <p className="lead">We sent a confirmation link to {email}. Open it and you are in.</p>
+            <button className="btn ghost" onClick={() => go({ v: "signin" })}>Back to log in</button>
+          </>
+        ) : (
+          <>
+            <h1>{isUp ? "Create your free account" : "Welcome back"}</h1>
+            <p className="lead">{isUp ? "Practice AP Microeconomics and Macroeconomics, and keep your progress on every device." : "Pick up where you left off."}</p>
+            {isUp && (
+              <label className="field"><span>First name</span>
+                <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Munis" /></label>
+            )}
+            <label className="field"><span>Email</span>
+              <input type="text" autoComplete="username" value={email}
+                onChange={(e) => { setEmail(e.target.value); setErr(""); }} placeholder="you@example.com" /></label>
+            <label className="field"><span>Password</span>
+              <input type="password" autoComplete={isUp ? "new-password" : "current-password"} value={pw}
+                onChange={(e) => { setPw(e.target.value); setErr(""); }}
+                onKeyDown={(e) => e.key === "Enter" && submit()} /></label>
+            {err && <div style={{ color: "var(--no)", fontSize: 13.5, marginBottom: 14 }}>{err}</div>}
+            <button className="btn" onClick={submit} disabled={busy || !email || !pw || (isUp && !name)}>
+              {busy ? <><span className="spin" /> Working</> : isUp ? "Create account" : "Log in"}
+            </button>
+            <div className="swap">
+              {isUp
+                ? <>Already have an account? <button onClick={() => go({ v: "signin" })}>Log in</button></>
+                : <>New here? <button onClick={() => go({ v: "signup" })}>Create a free account</button></>}
+            </div>
+          </>
+        )}
+      </div>
+      <div className="authart"><AuthArt /></div>
+    </div>
+  );
+}
+
+/* ---------------------------- dashboard ---------------------------- */
+
+function Dashboard({ bank, me, user, nav }) {
+  const { go } = nav;
+  const [savedIds] = useLocal("equilibrium:saved", []);
+  const hour = new Date().getHours();
+  const part = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
+  const name = user?.user_metadata?.name || (user?.email || "").split("@")[0];
+
+  let a = 0, c = 0;
+  Object.values(me.unit || {}).forEach((v) => { a += v.a; c += v.c; });
+  const missed = (me.missed || []).length;
+
+  const next = ["micro", "macro"].flatMap((sub) =>
+    UNITS[sub].flatMap((u) => (TOPICS[sub][u.n] || []).map(([code, title]) => {
+      const st = (me.topic || {})[`${sub}-${code}`];
+      const have = bank.questions.filter((q) => q.subject === sub && q.topic === code).length;
+      return { sub, code, title, weight: u.weight, have, p: st ? pct(st.c, st.a) : null };
+    }))).filter((r) => r.have > 0)
+    .map((r) => ({ ...r, score: r.weight * (r.p === null ? 1 : (100 - r.p) / 100 + 0.15) }))
+    .sort((x, y) => y.score - x.score).slice(0, 4);
+
+  return (
+    <div className="wrap" style={{ paddingTop: 30 }}>
+      <h1 className="greet">{part}, <em>{name}</em></h1>
+      <div className="sub" style={{ fontFamily: "'Telma',Georgia,serif", color: "var(--tx2)", fontSize: 16 }}>
+        {a ? "Here is where you stand and what to do next." : "Pick a course below and answer your first questions."}
+      </div>
+
+      <div className="kpis">
+        <div className="kpi2"><div className="v">{a}</div><div className="l">questions attempted</div></div>
+        <div className="kpi2"><div className="v">{a ? pct(c, a) + "%" : "—"}</div><div className="l">current accuracy</div></div>
+        <div className="kpi2"><div className="v">{savedIds.length}</div><div className="l">saved questions</div></div>
+        <div className="kpi2"><div className="v" style={{ color: missed ? "var(--no)" : "var(--tx)" }}>{missed}</div><div className="l">still getting wrong</div></div>
+      </div>
+
+      <div className="dash">
+        <div>
+          <div className="panel">
+            <h3>What to work on next</h3>
+            <p className="ptext">Ranked by how much each topic is worth on the exam against how you are doing on it.</p>
+            {next.length === 0
+              ? <div className="empty" style={{ padding: 26 }}>No questions in the bank yet.</div>
+              : next.map((r) => (
+                <button className="nextrow" key={r.sub + r.code}
+                  style={{ "--accent": r.sub === "micro" ? "var(--micro)" : "var(--macro)" }}
+                  onClick={() => go({ v: "practice", subject: r.sub, unit: 0, pool: shuffle(bank.questions.filter((q) => q.subject === r.sub && q.topic === r.code)) })}>
+                  <span><span className="num" style={{ color: r.sub === "micro" ? "var(--micro)" : "var(--macro)", marginRight: 10 }}>{r.code}</span>{r.title}</span>
+                  <span className="hint">{r.p === null ? "not started" : r.p + "%"}</span>
+                </button>
+              ))}
+          </div>
+
+          <div className="panel">
+            <h3>Keep going</h3>
+            <p className="ptext">Two courses, twelve units, every numbered topic from the course outline.</p>
+            <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+              <button className="btn sm acc" style={{ "--accent": "var(--micro)" }} onClick={() => go({ v: "bank", subject: "micro" })}>Micro question bank</button>
+              <button className="btn sm acc" style={{ "--accent": "var(--macro)" }} onClick={() => go({ v: "bank", subject: "macro" })}>Macro question bank</button>
+              <button className="btn sm ghost" onClick={() => go({ v: "tests" })}>Full-length test</button>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div className="panel">
+            <h3>Fix your mistakes</h3>
+            <p className="ptext">{missed ? `${missed} question${missed === 1 ? "" : "s"} you have missed and not yet got right.` : "Nothing outstanding. Questions you miss collect here."}</p>
+            <button className="btn sm" disabled={!missed} onClick={() => go({ v: "saved" })}>Start review</button>
+          </div>
+          <div className="panel">
+            <h3>Ask Equi</h3>
+            <p className="ptext">A tutor that stays inside AP Micro and Macro and answers with the graphs.</p>
+            <button className="btn sm ghost" onClick={() => go({ v: "tutor" })}>Open the tutor</button>
+          </div>
+        </div>
+      </div>
+      <div style={{ height: 50 }} />
+    </div>
+  );
+}
 
 /* ---------------------------- home ---------------------------- */
 
@@ -1170,10 +1478,8 @@ const Icon = ({ d }) => (
 function Shell({ nav, active, children }) {
   const { go, theme, toggleTheme } = nav;
   const [open, setOpen] = useState(false);
-  const [mini, setMini] = useLocal("equilibrium:rail", false);
-
   const item = (key, label, icon, route, dot) => (
-    <button className={"sitem" + (active === key ? " on" : "")} title={mini ? label : undefined}
+    <button className={"sitem" + (active === key ? " on" : "")} title={label}
       onClick={() => { setOpen(false); go(route); }}>
       <Icon d={icon} /><span className="lbl">{label}</span>
       {dot && <span className="sdot" style={{ background: dot }} />}
@@ -1181,11 +1487,9 @@ function Shell({ nav, active, children }) {
   );
 
   return (
-    <div className="shell" style={{ "--sidew": mini ? "68px" : "242px" }}>
+    <div className="shell">
       {open && <div className="scrim" onClick={() => setOpen(false)} />}
-      <aside className={"side" + (open ? " open" : "") + (mini ? " mini" : "")} style={{ position: "sticky" }}>
-        <button className="collapse" onClick={() => setMini((v) => !v)}
-          aria-label={mini ? "Expand the menu" : "Collapse the menu"}>{mini ? "›" : "‹"}</button>
+      <aside className={"side" + (open ? " open" : "")}>
         <button className="brand" onClick={() => { setOpen(false); go({ v: "home" }); }}>
           <Mark /><span className="wm lbl">Equilibrium</span>
         </button>
@@ -1194,14 +1498,20 @@ function Shell({ nav, active, children }) {
         {item("planner", "Study planner", I.planner, { v: "planner" })}
         {item("analytics", "Analytics", I.analytics, { v: "analytics" })}
         {item("saved", "Saved and mistakes", I.saved, { v: "saved" })}
-        <div className="sgroup">Practice</div>
+        <div className="sgroup"><span>Practice</span></div>
         {item("bank-micro", "Question bank · Micro", I.bank, { v: "bank", subject: "micro" }, "var(--micro)")}
         {item("bank-macro", "Question bank · Macro", I.bank, { v: "bank", subject: "macro" }, "var(--macro)")}
         {item("test", "Full-length test", I.test, { v: "tests" })}
         <div className="sfoot">
-          <button className="sitem" onClick={toggleTheme} title={mini ? "Switch theme" : undefined}>
+          <button className="sitem" onClick={toggleTheme} title="Switch theme">
             <ThemeIcon light={theme === "light"} />
             <span className="lbl">{theme === "light" ? "Dark mode" : "Light mode"}</span>
+          </button>
+          <button className="sitem" onClick={async () => { await signOut(); go({ v: "landing" }); }}
+            title="Log out">
+            <svg width="17" height="17" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5"
+              strokeLinecap="round" strokeLinejoin="round"><path d="M7 15.4H3.6V2.6H7M11.4 12.2 14.6 9l-3.2-3.2M14.6 9H7" /></svg>
+            <span className="lbl">Log out</span>
           </button>
         </div>
       </aside>
@@ -2126,7 +2436,7 @@ function Tutor({ nav }) {
 const BLANK_Q = { id: "", subject: "micro", unit: 1, topic: "", difficulty: "medium", stem: "", choices: ["", "", "", "", ""], answer: 0, explanation: "" };
 const BLANK_M = { id: "", subject: "micro", unit: 1, kind: "note", title: "", body: "", url: "" };
 
-function Admin({ bank, setBank, refreshBank, go }) {
+function Admin({ bank, setBank, refreshBank, go, admin }) {
   const [authed, setAuthed] = useState(false);
   const [checking, setChecking] = useState(true);
   const [email, setEmail] = useState(""), [pw, setPw] = useState("");
@@ -2137,7 +2447,7 @@ function Admin({ bank, setBank, refreshBank, go }) {
   useEffect(() => {
     (async () => {
       const { data } = await getSession();
-      setAuthed(Boolean(data?.session));
+      setAuthed(Boolean(data?.session) && (admin || await isAdmin()));
       setChecking(false);
     })();
   }, []);
@@ -2159,7 +2469,11 @@ function Admin({ bank, setBank, refreshBank, go }) {
 
   const tryIn = async () => {
     setBusy(true); setErr("");
-    try { await signIn(email.trim(), pw); setAuthed(true); }
+    try {
+      await signIn(email.trim(), pw);
+      if (await isAdmin()) setAuthed(true);
+      else { await signOut(); setErr("That account does not have console access."); }
+    }
     catch (e) { setErr(e.message === "Invalid login credentials" ? "That email and password don't match." : e.message || "Could not sign in."); }
     setBusy(false);
   };

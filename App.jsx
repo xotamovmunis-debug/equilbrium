@@ -570,15 +570,15 @@ const CSS = `
   border-right:1px solid rgba(255,255,255,.08);padding:16px 10px;
   display:flex;flex-direction:column;gap:3px;z-index:40;
   transition:width .2s cubic-bezier(.3,.8,.3,1),box-shadow .2s;}
-.eq .side:hover,.eq .side:focus-within{width:244px;box-shadow:24px 0 50px -20px rgba(0,0,0,.55);}
+.eq .side:hover,.eq .side:has(:focus-visible){width:244px;box-shadow:24px 0 50px -20px rgba(0,0,0,.55);}
 .eq.light .side{--sbg1:#0E5D53;--sbg2:#0A443D;}
 .eq .side .brand{display:flex;align-items:center;justify-content:center;gap:0;background:none;border:0;
   padding:8px 0 18px;color:var(--stx);white-space:nowrap;width:100%;}
 .eq .side .brand .bw{max-width:0;opacity:0;overflow:hidden;white-space:nowrap;
   transition:max-width .22s cubic-bezier(.3,.8,.3,1),opacity .16s;}
-.eq .side:hover .brand,.eq .side:focus-within .brand{justify-content:flex-start;padding-left:8px;}
-.eq .side:hover .brand .bw.l,.eq .side:focus-within .brand .bw.l{max-width:170px;opacity:1;}
-.eq .side:hover .brand .bw.r,.eq .side:focus-within .brand .bw.r{max-width:50px;opacity:1;}
+.eq .side:hover .brand,.eq .side:has(:focus-visible) .brand{justify-content:flex-start;padding-left:8px;}
+.eq .side:hover .brand .bw.l,.eq .side:has(:focus-visible) .brand .bw.l{max-width:170px;opacity:1;}
+.eq .side:hover .brand .bw.r,.eq .side:has(:focus-visible) .brand .bw.r{max-width:50px;opacity:1;}
 .eq .brandwrap{display:inline-flex;align-items:center;gap:9px;letter-spacing:-.01em;line-height:1;}
 .eq .brandwrap .bw-mark{display:flex;flex:0 0 auto;}
 .eq .wm .ap{color:var(--micro);}
@@ -598,7 +598,7 @@ const CSS = `
 /* Labels fade in with the rail rather than reflowing it. */
 .eq .lbl,.eq .sdot,.eq .sgroup span{opacity:0;transition:opacity .16s;}
 .eq .side:hover .lbl,.eq .side:hover .sdot,.eq .side:hover .sgroup span,
-.eq .side:focus-within .lbl,.eq .side:focus-within .sdot,.eq .side:focus-within .sgroup span{opacity:1;}
+.eq .side:has(:focus-visible) .lbl,.eq .side:has(:focus-visible) .sdot,.eq .side:has(:focus-visible) .sgroup span{opacity:1;}
 .eq .main{min-width:0;margin-left:70px;}
 .eq .mtop{display:none;}
 
@@ -1643,7 +1643,7 @@ function Shell({ nav, active, children }) {
   const [open, setOpen] = useState(false);
   const item = (key, label, icon, route, dot) => (
     <button className={"sitem" + (active === key ? " on" : "")} title={label}
-      onClick={() => { setOpen(false); go(route); }}>
+      onClick={(e) => { e.currentTarget.blur(); setOpen(false); go(route); }}>
       <Icon d={icon} /><span className="lbl">{label}</span>
       {dot && <span className="sdot" style={{ background: dot }} />}
     </button>
@@ -1653,7 +1653,8 @@ function Shell({ nav, active, children }) {
     <div className="shell">
       {open && <div className="scrim" onClick={() => setOpen(false)} />}
       <aside className={"side" + (open ? " open" : "")}>
-        <button className="brand" onClick={() => { setOpen(false); go({ v: "home" }); }} title="AP Equilibrium">
+        <button className="brand" title="AP Equilibrium"
+          onClick={(e) => { e.currentTarget.blur(); setOpen(false); go({ v: "home" }); }}>
           <Brand size={20} mark={26} />
         </button>
         {item("home", "Home", I.home, { v: "home" })}
@@ -1666,12 +1667,13 @@ function Shell({ nav, active, children }) {
         {item("bank-macro", "Question bank · Macro", I.bank, { v: "bank", subject: "macro" }, "var(--macro)")}
         {item("test", "Full-length test", I.test, { v: "tests" })}
         <div className="sfoot">
-          <button className="sitem" onClick={toggleTheme} title="Switch theme">
+          <button className="sitem" title="Switch theme"
+            onClick={(e) => { e.currentTarget.blur(); toggleTheme(); }}>
             <ThemeIcon light={theme === "light"} />
             <span className="lbl">{theme === "light" ? "Dark mode" : "Light mode"}</span>
           </button>
-          <button className="sitem" onClick={async () => { await signOut(); go({ v: "landing" }); }}
-            title="Log out">
+          <button className="sitem" title="Log out"
+            onClick={async (e) => { e.currentTarget.blur(); await signOut(); go({ v: "landing" }); }}>
             <svg width="17" height="17" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5"
               strokeLinecap="round" strokeLinejoin="round"><path d="M7 15.4H3.6V2.6H7M11.4 12.2 14.6 9l-3.2-3.2M14.6 9H7" /></svg>
             <span className="lbl">Log out</span>

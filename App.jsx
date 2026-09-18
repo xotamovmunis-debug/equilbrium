@@ -568,7 +568,7 @@ const CSS = `
   position:fixed;left:0;top:0;bottom:0;width:70px;overflow-x:hidden;overflow-y:auto;
   background:linear-gradient(168deg,var(--sbg1),var(--sbg2));color:var(--stx);
   border-right:1px solid rgba(255,255,255,.08);padding:16px 10px;
-  display:flex;flex-direction:column;gap:3px;z-index:40;
+  display:flex;flex-direction:column;gap:3px;z-index:60;
   transition:width .2s cubic-bezier(.3,.8,.3,1),box-shadow .2s;}
 .eq .side:hover,.eq .side:has(:focus-visible){width:244px;box-shadow:24px 0 50px -20px rgba(0,0,0,.55);}
 .eq.light .side{--sbg1:#0E5D53;--sbg2:#0A443D;}
@@ -599,7 +599,12 @@ const CSS = `
 .eq .lbl,.eq .sdot,.eq .sgroup span{opacity:0;transition:opacity .16s;}
 .eq .side:hover .lbl,.eq .side:hover .sdot,.eq .side:hover .sgroup span,
 .eq .side:has(:focus-visible) .lbl,.eq .side:has(:focus-visible) .sdot,.eq .side:has(:focus-visible) .sgroup span{opacity:1;}
-.eq .main{min-width:0;margin-left:70px;}
+.eq .main{min-width:0;margin-left:70px;position:relative;z-index:1;}
+/* While the rail is open the page dims, so it reads as a layer on top. */
+.eq .railveil{position:fixed;inset:0 0 0 70px;background:rgba(0,0,0,.34);opacity:0;pointer-events:none;
+  transition:opacity .2s;z-index:50;}
+.eq.light .railveil{background:rgba(40,30,15,.22);}
+.eq .side:hover ~ .main .railveil,.eq .side:has(:focus-visible) ~ .main .railveil{opacity:1;}
 .eq .mtop{display:none;}
 
 /* ---- question surface ---- */
@@ -671,6 +676,7 @@ const CSS = `
 
 @media (max-width:900px){
   .eq .main{margin-left:0;}
+  .eq .railveil{display:none;}
   .eq .side{width:250px;transform:translateX(-100%);transition:transform .25s;}
   .eq .side:hover{width:250px;}
   .eq .side.open{transform:none;}
@@ -1681,6 +1687,7 @@ function Shell({ nav, active, children }) {
         </div>
       </aside>
       <div className="main">
+        <div className="railveil" aria-hidden="true" />
         <div className="mtop">
           <button className="mini" onClick={() => setOpen(true)} aria-label="Open menu">☰</button>
           <Brand size={17} mark={21} />

@@ -141,7 +141,7 @@ const askClaude = (messages, system, maxTokens = 1200) => askTutor(messages, sys
 /* ---------------------------- styles ---------------------------- */
 
 const CSS = `
-@import url('https://api.fontshare.com/v2/css?f[]=stardom@400&f[]=telma@400,500,700&display=swap');
+@import url('https://api.fontshare.com/v2/css?f[]=stardom@400&f[]=satoshi@400,500,700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap');
 
 .eq,.eq *{box-sizing:border-box;}
@@ -155,7 +155,7 @@ const CSS = `
   --navbg:rgba(7,10,18,.8); --glowA:rgba(47,192,205,.13); --glowB:rgba(240,169,58,.09);
   --shadow:0 30px 80px -30px rgba(0,0,0,.9);
   --accent:var(--macro);
-  font-family:'Inter',system-ui,-apple-system,sans-serif;
+  font-family:'Satoshi','Inter',system-ui,-apple-system,sans-serif;
   background:var(--bg); color:var(--tx); min-height:100vh;
   font-size:16px; line-height:1.55; -webkit-font-smoothing:antialiased;
   position:relative; overflow-x:hidden;
@@ -177,7 +177,7 @@ const CSS = `
 .eq .z{position:relative;z-index:1;}
 .eq h1,.eq h2,.eq h3,.eq h4,.eq .wm{font-family:'Stardom','Playfair Display',Georgia,serif;
   font-weight:400;letter-spacing:-.012em;line-height:1.06;margin:0;}
-.eq .ed{font-family:'Telma','Iowan Old Style',Georgia,serif;font-weight:400;}
+.eq .ed{}
 .eq .num{font-family:'JetBrains Mono',ui-monospace,monospace;font-variant-numeric:tabular-nums;}
 .eq button{font-family:inherit;font-size:inherit;cursor:pointer;color:inherit;}
 .eq :focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:4px;}
@@ -199,7 +199,7 @@ const CSS = `
 .eq .hero h1{font-size:clamp(42px,5.8vw,72px);font-weight:400;letter-spacing:-.02em;line-height:1.02;}
 .eq .hero h1 .g{background:linear-gradient(96deg,var(--micro),var(--macro));-webkit-background-clip:text;
   background-clip:text;color:transparent;}
-.eq .hero p{font-family:'Telma',Georgia,serif;color:var(--tx2);font-size:19px;line-height:1.6;margin:22px 0 0;max-width:42ch;}
+.eq .hero p{color:var(--tx2);font-size:17.5px;line-height:1.62;margin:22px 0 0;max-width:46ch;}
 .eq .heroact{display:flex;gap:12px;margin-top:32px;flex-wrap:wrap;}
 .eq .plotbox{position:relative;border:1px solid rgba(255,255,255,.1);border-radius:16px;overflow:hidden;
   background:linear-gradient(168deg,#0C544B,#093A34);box-shadow:var(--shadow);}
@@ -260,7 +260,7 @@ const CSS = `
 .eq .course h2,.eq .course .cstats b{transition:color .3s;}
 .eq .course:hover h2{color:color-mix(in srgb,var(--accent) 30%,var(--tx));}
 .eq .course h2{font-size:34px;margin:16px 0 0;}
-.eq .course p{font-family:'Telma',Georgia,serif;color:var(--tx2);font-size:16px;line-height:1.5;margin:10px 0 0;max-width:36ch;}
+.eq .course p{color:var(--tx2);font-size:14.5px;line-height:1.55;margin:10px 0 0;max-width:38ch;}
 .eq .course .cstats{display:flex;gap:22px;margin-top:22px;padding-top:18px;border-top:1px solid var(--line);}
 .eq .course .cstats b{display:block;font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:600;}
 .eq .course .cstats span{font-size:11.5px;color:var(--tx3);}
@@ -269,14 +269,14 @@ const CSS = `
   border:1px solid rgba(255,255,255,.1);border-radius:14px;overflow:hidden;margin:34px 0 70px;}
 .eq .feat{background:linear-gradient(168deg,#0C544B,#093A34);padding:26px 24px;color:#E4F3EF;}
 .eq .feat h3{font-size:18px;color:#fff;}
-.eq .feat p{font-family:'Telma',Georgia,serif;color:#A8CFC7;font-size:15px;margin:8px 0 0;line-height:1.55;}
+.eq .feat p{color:#A8CFC7;font-size:14px;margin:9px 0 0;line-height:1.6;}
 
 .eq .crumb{display:flex;align-items:center;gap:9px;font-size:13px;color:var(--tx3);padding:26px 0 0;flex-wrap:wrap;}
 .eq .crumb button{background:none;border:0;padding:0;color:var(--tx3);}
 .eq .crumb button:hover{color:var(--tx);}
 .eq .phead{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:24px;padding:16px 0 30px;}
 .eq .phead h1{font-size:clamp(32px,4.8vw,50px);font-weight:400;}
-.eq .phead .sub{font-family:'Telma',Georgia,serif;color:var(--tx2);font-size:16px;margin-top:10px;max-width:52ch;}
+.eq .phead .sub{color:var(--tx2);font-size:14.5px;margin-top:10px;max-width:58ch;}
 .eq .kpi{display:flex;gap:26px;}
 .eq .kpi .v{font-family:'JetBrains Mono',monospace;font-size:30px;font-weight:600;line-height:1;}
 .eq .kpi .l{font-size:11.5px;color:var(--tx3);margin-top:6px;}
@@ -289,7 +289,7 @@ const CSS = `
 .eq .urow:disabled{cursor:default;}
 .eq .urow .idx{font-family:'JetBrains Mono',monospace;font-size:14px;color:var(--accent);font-weight:600;}
 .eq .urow .t{font-weight:600;font-size:15.5px;}
-.eq .urow .b{font-family:'Telma',Georgia,serif;font-size:14px;color:var(--tx3);margin-top:4px;}
+.eq .urow .b{font-size:12.5px;color:var(--tx3);margin-top:4px;}
 .eq .urow .wl{font-size:11.5px;color:var(--tx3);margin-bottom:6px;}
 .eq .track{height:6px;background:var(--surfhi);border-radius:3px;overflow:hidden;}
 .eq .track i{display:block;height:100%;background:var(--accent);border-radius:3px;}
@@ -307,7 +307,7 @@ const CSS = `
 .eq .mk{font-size:11.5px;color:var(--accent);border:1px solid color-mix(in srgb,var(--accent) 35%,transparent);
   border-radius:999px;padding:2px 9px;white-space:nowrap;}
 .eq .matl .chev{color:var(--tx3);font-size:12px;}
-.eq .prose{font-family:'Telma',Georgia,serif;padding:18px 20px 22px;color:var(--tx2);font-size:16.5px;line-height:1.66;}
+.eq .prose{padding:18px 20px 22px;color:var(--tx2);font-size:15.5px;line-height:1.72;}
 .eq .prose h4{font-size:16px;color:var(--tx);margin:18px 0 7px;}
 .eq .prose h4:first-child{margin-top:0;}
 .eq .prose p{margin:0 0 11px;}
@@ -345,7 +345,7 @@ const CSS = `
   border-radius:11px;padding:18px 20px;}
 .eq .fb .v{font-family:'Stardom',Georgia,serif;font-weight:400;font-size:18px;margin-bottom:9px;}
 .eq .fb .v.y{color:var(--ok);} .eq .fb .v.n{color:var(--no);}
-.eq .fb p{font-family:'Telma',Georgia,serif;margin:0;color:var(--tx2);font-size:16.5px;line-height:1.6;}
+.eq .fb p{margin:0;color:var(--tx2);font-size:15.5px;line-height:1.68;}
 .eq .actions{display:flex;align-items:center;gap:14px;margin-top:28px;flex-wrap:wrap;}
 
 .eq .score{display:flex;align-items:flex-end;gap:34px;flex-wrap:wrap;padding:38px 0 10px;}
@@ -447,7 +447,7 @@ const CSS = `
   border:1px solid var(--line);border-radius:16px;padding:26px;margin:0 0 48px;box-shadow:var(--shadow);
   background:linear-gradient(120deg,var(--surf),var(--bg2));}
 .eq .mockcard h3{font-size:25px;margin:13px 0 0;}
-.eq .mockcard p{font-family:'Telma',Georgia,serif;color:var(--tx2);font-size:15.5px;margin:9px 0 0;max-width:46ch;}
+.eq .mockcard p{color:var(--tx2);font-size:14px;margin:9px 0 0;max-width:50ch;}
 .eq .mockcard .ml{display:flex;gap:20px;margin-top:16px;}
 .eq .mockcard .ml b{display:block;font-family:'JetBrains Mono',monospace;font-size:17px;font-weight:600;}
 .eq .mockcard .ml span{font-size:11.5px;color:var(--tx3);}
@@ -484,14 +484,14 @@ const CSS = `
 .eq .lhero .ul{position:relative;white-space:nowrap;}
 .eq .lhero .ul::after{content:'';position:absolute;left:0;right:0;bottom:-2px;height:4px;border-radius:3px;
   background:linear-gradient(90deg,var(--micro),var(--macro));}
-.eq .lhero p{font-family:'Telma',Georgia,serif;color:var(--tx2);font-size:19px;line-height:1.55;
-  margin:24px 0 0;max-width:42ch;}
+.eq .lhero p{color:var(--tx2);font-size:18px;line-height:1.6;
+  margin:24px 0 0;max-width:46ch;}
 
 .eq .auth{display:grid;grid-template-columns:1fr 1fr;min-height:100vh;}
 .eq .authform{display:flex;flex-direction:column;justify-content:center;padding:40px 8vw;max-width:620px;
   width:100%;margin:0 auto;}
 .eq .authform h1{font-size:34px;margin-bottom:8px;}
-.eq .authform .lead{font-family:'Telma',Georgia,serif;color:var(--tx2);font-size:16px;margin:0 0 28px;}
+.eq .authform .lead{color:var(--tx2);font-size:15.5px;line-height:1.6;margin:0 0 28px;}
 .eq .authart{background:linear-gradient(168deg,#0C544B,#093A34);display:flex;align-items:center;
   justify-content:center;padding:40px;}
 .eq .authart svg{width:100%;max-width:440px;height:auto;}
@@ -509,7 +509,7 @@ const CSS = `
 .eq .kpi2 .l{font-size:11.5px;color:var(--tx3);margin-top:7px;}
 .eq .panel{border:1px solid var(--line);border-radius:14px;background:var(--bg2);padding:22px;margin-bottom:20px;}
 .eq .panel h3{font-size:19px;margin-bottom:4px;}
-.eq .panel .ptext{font-family:'Telma',Georgia,serif;color:var(--tx2);font-size:15px;margin:8px 0 16px;}
+.eq .panel .ptext{color:var(--tx2);font-size:14px;line-height:1.6;margin:8px 0 16px;}
 .eq .nextrow{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:11px 0;
   border-bottom:1px solid var(--line);font-size:14px;width:100%;background:none;border-left:0;border-right:0;
   border-top:0;text-align:left;}
@@ -533,7 +533,7 @@ const CSS = `
 .eq .allcard{display:flex;justify-content:space-between;align-items:center;gap:20px;flex-wrap:wrap;
   border:1px solid var(--line);border-radius:14px;background:var(--surf);padding:20px 22px;margin-bottom:26px;}
 .eq .allcard h3{font-size:20px;}
-.eq .allcard p{font-family:'Telma',Georgia,serif;color:var(--tx2);font-size:15px;margin:6px 0 0;}
+.eq .allcard p{color:var(--tx2);font-size:14px;margin:6px 0 0;}
 .eq .ugroup{margin-bottom:30px;}
 .eq .ugtitle{display:flex;align-items:baseline;gap:12px;margin-bottom:10px;}
 .eq .ugtitle h3{font-size:21px;}
@@ -574,13 +574,13 @@ const CSS = `
 .eq.light .side{--sbg1:#0E5D53;--sbg2:#0A443D;}
 .eq .side .brand{display:flex;align-items:center;justify-content:center;gap:0;background:none;border:0;
   padding:8px 0 18px;color:var(--stx);white-space:nowrap;width:100%;}
-.eq .side .brand .mk2{flex:0 0 auto;transition:transform .2s cubic-bezier(.3,.8,.3,1);transform:scale(1.22);}
-.eq .side .brand .wm{max-width:0;opacity:0;overflow:hidden;
-  transition:max-width .2s cubic-bezier(.3,.8,.3,1),opacity .16s,margin .2s;}
+.eq .side .brand .bw{max-width:0;opacity:0;overflow:hidden;white-space:nowrap;
+  transition:max-width .22s cubic-bezier(.3,.8,.3,1),opacity .16s;}
 .eq .side:hover .brand,.eq .side:focus-within .brand{justify-content:flex-start;padding-left:8px;}
-.eq .side:hover .brand .mk2,.eq .side:focus-within .brand .mk2{transform:none;}
-.eq .side:hover .brand .wm,.eq .side:focus-within .brand .wm{max-width:200px;opacity:1;margin-left:11px;}
-.eq .side .brand .wm{font-size:20px;letter-spacing:-.01em;}
+.eq .side:hover .brand .bw.l,.eq .side:focus-within .brand .bw.l{max-width:170px;opacity:1;}
+.eq .side:hover .brand .bw.r,.eq .side:focus-within .brand .bw.r{max-width:50px;opacity:1;}
+.eq .brandwrap{display:inline-flex;align-items:center;gap:9px;letter-spacing:-.01em;line-height:1;}
+.eq .brandwrap .bw-mark{display:flex;flex:0 0 auto;}
 .eq .wm .ap{color:var(--micro);}
 .eq .side .wm .ap{color:#F5C46B;}
 .eq .sgroup{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--stx2);
@@ -700,10 +700,13 @@ function Mark({ size = 26 }) {
   );
 }
 
-function Wordmark({ size = 19 }) {
+/* The mark sits between the two words: Equilibrium ✕ AP */
+function Brand({ size = 19, mark = 24 }) {
   return (
-    <span className="wm" style={{ fontSize: size }}>
-      <span className="ap">AP</span> Equilibrium
+    <span className="brandwrap wm" style={{ fontSize: size }}>
+      <span className="bw l">Equilibrium</span>
+      <span className="bw-mark"><Mark size={mark} /></span>
+      <span className="bw r ap">AP</span>
     </span>
   );
 }
@@ -1095,7 +1098,7 @@ function Landing({ nav, go }) {
       <div className="land">
         <div className="lnav">
           <button className="logo" onClick={() => go({ v: "landing" })}>
-            <Mark /><Wordmark />
+            <Brand />
           </button>
           <span style={{ display: "flex", gap: 10, alignItems: "center" }}>
             <button className="tgl" onClick={nav.toggleTheme} aria-label="Switch theme">
@@ -1156,7 +1159,7 @@ function AuthPage({ mode, go, nav }) {
     <div className="auth">
       <div className="authform">
         <button className="logo" style={{ marginBottom: 30 }} onClick={() => go({ v: "landing" })}>
-          <Mark /><Wordmark />
+          <Brand />
         </button>
         {sent ? (
           <>
@@ -1219,7 +1222,7 @@ function ForgotPage({ go }) {
     <div className="auth">
       <div className="authform">
         <button className="logo" style={{ marginBottom: 30 }} onClick={() => go({ v: "landing" })}>
-          <Mark /><Wordmark />
+          <Brand />
         </button>
         {sent ? (
           <>
@@ -1268,7 +1271,7 @@ function ResetPage({ go }) {
     <div className="auth">
       <div className="authform">
         <button className="logo" style={{ marginBottom: 30 }} onClick={() => go({ v: "landing" })}>
-          <Mark /><Wordmark />
+          <Brand />
         </button>
         {done ? (
           <>
@@ -1324,7 +1327,7 @@ function Dashboard({ bank, me, user, nav }) {
   return (
     <div className="wrap" style={{ paddingTop: 30 }}>
       <h1 className="greet">{part}, <em>{name}</em></h1>
-      <div className="sub" style={{ fontFamily: "'Telma',Georgia,serif", color: "var(--tx2)", fontSize: 16 }}>
+      <div className="sub" style={{ color: "var(--tx2)", fontSize: 16 }}>
         {a ? "Here is where you stand and what to do next." : "Pick a course below and answer your first questions."}
       </div>
 
@@ -1640,8 +1643,7 @@ function Shell({ nav, active, children }) {
       {open && <div className="scrim" onClick={() => setOpen(false)} />}
       <aside className={"side" + (open ? " open" : "")}>
         <button className="brand" onClick={() => { setOpen(false); go({ v: "home" }); }} title="AP Equilibrium">
-          <span className="mk2"><Mark size={28} /></span>
-          <Wordmark size={20} />
+          <Brand size={20} mark={26} />
         </button>
         {item("home", "Home", I.home, { v: "home" })}
         {item("tutor", "Ask Equi tutor", I.tutor, { v: "tutor" })}
@@ -1668,7 +1670,7 @@ function Shell({ nav, active, children }) {
       <div className="main">
         <div className="mtop">
           <button className="mini" onClick={() => setOpen(true)} aria-label="Open menu">☰</button>
-          <Mark size={22} /><Wordmark size={17} />
+          <Brand size={17} mark={21} />
         </div>
         {children}
       </div>
@@ -2719,7 +2721,7 @@ function Admin({ bank, setBank, refreshBank, go, admin }) {
   return (
     <div className="wrap">
       <div className="navin" style={{ borderBottom: "1px solid var(--line)" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}><Mark size={24} /><span className="wm" style={{ fontSize: 17 }}><span className="ap">AP</span> Console</span></div>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}><Brand size={17} mark={21} /><span className="wm" style={{ fontSize: 17, marginLeft: 10, color: "var(--tx3)" }}>Console</span></div>
         <span style={{ display: "flex", gap: 8 }}>
           <button className="mini" onClick={() => go({ v: "home" })}>View site</button>
           <button className="mini" onClick={async () => { await signOut(); setAuthed(false); }}>Sign out</button>

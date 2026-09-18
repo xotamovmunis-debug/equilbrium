@@ -867,6 +867,14 @@ function Prose({ text }) {
    APP
    ============================================================ */
 
+/* Which rail entry lights up for the page being shown. */
+function shellKey(r) {
+  if (["planner", "analytics", "saved", "tutor"].includes(r.v)) return r.v;
+  if (["tests", "mock", "mockresult"].includes(r.v)) return "test";
+  if (r.subject) return `bank-${r.subject}`;
+  return "home";
+}
+
 function parseRoute() {
   const p = (window.location.pathname || "/").toLowerCase().split("/").filter(Boolean);
   if (p[0] === "signin") return { v: "signin" };
@@ -1019,7 +1027,10 @@ export default function App() {
             ? <AuthPage mode={route.v} go={go} nav={nav} />
             : route.v === "forgot" ? <ForgotPage go={go} />
               : <Landing nav={nav} go={go} />
-        ) : (<>
+        ) : route.v === "admin" ? (
+          <Admin bank={bank} setBank={setBank} refreshBank={refreshBank} go={go} admin={admin} />
+        ) : (
+        <Shell nav={nav} active={shellKey(route)}>
         {loadError && (
           <div className="wrap" style={{ paddingTop: 16 }}>
             <div className="note" style={{ borderLeftColor: "var(--no)" }}>
@@ -1029,21 +1040,21 @@ export default function App() {
             </div>
           </div>
         )}
-        {(route.v === "home" || route.v === "landing" || route.v === "signin" || route.v === "signup" || route.v === "forgot") && <Shell nav={nav} active="home"><Dashboard bank={bank} me={me} user={user} nav={nav} /></Shell>}
-        {route.v === "course" && <Shell nav={nav} active={`bank-${route.subject}`}><Course subject={route.subject} bank={bank} me={me} nav={nav} /></Shell>}
+        {(route.v === "home" || route.v === "landing" || route.v === "signin" || route.v === "signup" || route.v === "forgot") && <Dashboard bank={bank} me={me} user={user} nav={nav} />}
+        {route.v === "course" && <Course subject={route.subject} bank={bank} me={me} nav={nav} />}
         {route.v === "bank" && <Bank subject={route.subject} bank={bank} me={me} nav={nav} />}
         {route.v === "planner" && <Planner bank={bank} me={me} nav={nav} />}
         {route.v === "analytics" && <Analytics bank={bank} me={me} nav={nav} />}
         {route.v === "saved" && <Saved bank={bank} me={me} nav={nav} />}
         {route.v === "tests" && <Tests bank={bank} nav={nav} />}
-        {route.v === "unit" && <Shell nav={nav} active={`bank-${route.subject}`}><UnitPage subject={route.subject} unit={route.unit} bank={bank} me={me} nav={nav} /></Shell>}
+        {route.v === "unit" && <UnitPage subject={route.subject} unit={route.unit} bank={bank} me={me} nav={nav} />}
         {route.v === "practice" && <Practice {...route} go={go} onFinish={recordSession} nav={nav} />}
-        {route.v === "results" && <Shell nav={nav} active={`bank-${route.subject}`}><Results {...route} nav={nav} /></Shell>}
+        {route.v === "results" && <Results {...route} nav={nav} />}
         {route.v === "mock" && <Mock {...route} go={go} onFinish={recordSession} nav={nav} />}
-        {route.v === "mockresult" && <Shell nav={nav} active="test"><MockResult {...route} bands={bank.bands} nav={nav} /></Shell>}
-        {route.v === "tutor" && <Shell nav={nav} active="tutor"><Tutor nav={nav} /></Shell>}
-        {route.v === "admin" && <Admin bank={bank} setBank={setBank} refreshBank={refreshBank} go={go} admin={admin} />}
-        </>)}
+        {route.v === "mockresult" && <MockResult {...route} bands={bank.bands} nav={nav} />}
+        {route.v === "tutor" && <Tutor nav={nav} />}
+        </Shell>
+        )}
       </div>
     </div>
   );
@@ -2064,7 +2075,7 @@ function Practice({ subject, unit, pool, go, onFinish, nav }) {
     : unit === 0 ? "Mixed set" : `Unit ${unit}`;
 
   return (
-    <Shell nav={nav} active={`bank-${subject}`}>
+    <>
       <div className="wrap" style={{ maxWidth: 820 }}>
         <div className="crumb" style={{ justifyContent: "space-between" }}>
           <span style={{ display: "flex", gap: 9, alignItems: "center" }}>
@@ -2107,7 +2118,7 @@ function Practice({ subject, unit, pool, go, onFinish, nav }) {
             : <button className="btn" onClick={check} disabled={picked === null}>Check</button>}
         </div>
       </div>
-    </Shell>
+    </>
   );
 }
 
@@ -2128,7 +2139,7 @@ function Saved({ bank, me, nav }) {
   const start = () => { if (list.length) go({ v: "practice", subject: list[0].subject, unit: 0, pool: shuffle(list) }); };
 
   return (
-    <Shell nav={nav} active="saved">
+    <>
       <div className="wrap">
         <div className="phead" style={{ paddingTop: 30 }}>
           <div>
@@ -2169,7 +2180,7 @@ function Saved({ bank, me, nav }) {
         )}
         <div style={{ height: 50 }} />
       </div>
-    </Shell>
+    </>
   );
 }
 
@@ -2189,7 +2200,7 @@ function Analytics({ bank, me, nav }) {
   };
 
   return (
-    <Shell nav={nav} active="analytics">
+    <>
       <div className="wrap">
         <div className="phead" style={{ paddingTop: 30 }}>
           <div>
@@ -2226,7 +2237,7 @@ function Analytics({ bank, me, nav }) {
         })}
         <div style={{ height: 50 }} />
       </div>
-    </Shell>
+    </>
   );
 }
 
@@ -2247,7 +2258,7 @@ function Planner({ bank, me, nav }) {
     .sort((x, y) => y.score - x.score).slice(0, 6);
 
   return (
-    <Shell nav={nav} active="planner">
+    <>
       <div className="wrap">
         <div className="phead" style={{ paddingTop: 30 }}>
           <div>
@@ -2278,7 +2289,7 @@ function Planner({ bank, me, nav }) {
         })}
         <div style={{ height: 50 }} />
       </div>
-    </Shell>
+    </>
   );
 }
 
@@ -2291,7 +2302,7 @@ function Tests({ bank, nav }) {
     if (p.length >= 5) go({ v: "mock", subject, pool: p });
   };
   return (
-    <Shell nav={nav} active="test">
+    <>
       <div className="wrap">
         <div className="phead" style={{ paddingTop: 30 }}>
           <div>
@@ -2321,7 +2332,7 @@ function Tests({ bank, nav }) {
         })}
         <div style={{ height: 50 }} />
       </div>
-    </Shell>
+    </>
   );
 }
 
@@ -2414,7 +2425,7 @@ function Mock({ subject, pool, go, onFinish, nav }) {
   }, [q, pool.length, grid, confirm]);
 
   return (
-    <Shell nav={nav} active="test">
+    <>
       <div className="wrap" style={{ maxWidth: 820 }}>
         <div className="crumb" style={{ justifyContent: "space-between" }}>
           <span>Full-length test · AP {SNAME[subject]}</span>
@@ -2478,7 +2489,7 @@ function Mock({ subject, pool, go, onFinish, nav }) {
           </div>
         </div>
       )}
-    </Shell>
+    </>
   );
 }
 

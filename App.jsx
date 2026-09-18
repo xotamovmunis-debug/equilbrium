@@ -600,6 +600,7 @@ const CSS = `
 .eq .side:hover .lbl,.eq .side:hover .sdot,.eq .side:hover .sgroup span,
 .eq .side:has(:focus-visible) .lbl,.eq .side:has(:focus-visible) .sdot,.eq .side:has(:focus-visible) .sgroup span{opacity:1;}
 .eq .main{min-width:0;margin-left:70px;position:relative;z-index:1;}
+.eq .solo{min-height:100vh;}
 /* While the rail is open the page dims, so it reads as a layer on top. */
 .eq .railveil{position:fixed;inset:0 0 0 70px;background:rgba(0,0,0,.34);opacity:0;pointer-events:none;
   transition:opacity .2s;z-index:50;}
@@ -1035,6 +1036,12 @@ export default function App() {
               : <Landing nav={nav} go={go} />
         ) : route.v === "admin" ? (
           <Admin bank={bank} setBank={setBank} refreshBank={refreshBank} go={go} admin={admin} />
+        ) : route.v === "practice" || route.v === "mock" ? (
+          <div className="solo">
+            {route.v === "practice"
+              ? <Practice {...route} go={go} onFinish={recordSession} nav={nav} />
+              : <Mock {...route} go={go} onFinish={recordSession} nav={nav} />}
+          </div>
         ) : (
         <Shell nav={nav} active={shellKey(route)}>
         {loadError && (
@@ -1054,9 +1061,7 @@ export default function App() {
         {route.v === "saved" && <Saved bank={bank} me={me} nav={nav} />}
         {route.v === "tests" && <Tests bank={bank} nav={nav} />}
         {route.v === "unit" && <UnitPage subject={route.subject} unit={route.unit} bank={bank} me={me} nav={nav} />}
-        {route.v === "practice" && <Practice {...route} go={go} onFinish={recordSession} nav={nav} />}
         {route.v === "results" && <Results {...route} nav={nav} />}
-        {route.v === "mock" && <Mock {...route} go={go} onFinish={recordSession} nav={nav} />}
         {route.v === "mockresult" && <MockResult {...route} bands={bank.bands} nav={nav} />}
         {route.v === "tutor" && <Tutor nav={nav} />}
         </Shell>

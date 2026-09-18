@@ -572,9 +572,17 @@ const CSS = `
   transition:width .2s cubic-bezier(.3,.8,.3,1),box-shadow .2s;}
 .eq .side:hover,.eq .side:focus-within{width:244px;box-shadow:24px 0 50px -20px rgba(0,0,0,.55);}
 .eq.light .side{--sbg1:#0E5D53;--sbg2:#0A443D;}
-.eq .side .brand{display:flex;align-items:center;gap:11px;background:none;border:0;padding:6px 8px 14px;
-  color:var(--stx);white-space:nowrap;}
-.eq .side .brand .wm{font-size:19px;letter-spacing:-.01em;}
+.eq .side .brand{display:flex;align-items:center;justify-content:center;gap:0;background:none;border:0;
+  padding:8px 0 18px;color:var(--stx);white-space:nowrap;width:100%;}
+.eq .side .brand .mk2{flex:0 0 auto;transition:transform .2s cubic-bezier(.3,.8,.3,1);transform:scale(1.22);}
+.eq .side .brand .wm{max-width:0;opacity:0;overflow:hidden;
+  transition:max-width .2s cubic-bezier(.3,.8,.3,1),opacity .16s,margin .2s;}
+.eq .side:hover .brand,.eq .side:focus-within .brand{justify-content:flex-start;padding-left:8px;}
+.eq .side:hover .brand .mk2,.eq .side:focus-within .brand .mk2{transform:none;}
+.eq .side:hover .brand .wm,.eq .side:focus-within .brand .wm{max-width:200px;opacity:1;margin-left:11px;}
+.eq .side .brand .wm{font-size:20px;letter-spacing:-.01em;}
+.eq .wm .ap{color:var(--micro);}
+.eq .side .wm .ap{color:#F5C46B;}
 .eq .sgroup{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--stx2);
   padding:18px 10px 6px;white-space:nowrap;height:32px;}
 .eq .sitem{display:flex;align-items:center;gap:13px;width:100%;background:none;border:0;text-align:left;
@@ -689,6 +697,14 @@ function Mark({ size = 26 }) {
       <circle cx="13" cy="13" r="3.1" fill="var(--markbg)" />
       <circle cx="13" cy="13" r="1.9" fill="var(--tx)" />
     </svg>
+  );
+}
+
+function Wordmark({ size = 19 }) {
+  return (
+    <span className="wm" style={{ fontSize: size }}>
+      <span className="ap">AP</span> Equilibrium
+    </span>
   );
 }
 
@@ -1079,7 +1095,7 @@ function Landing({ nav, go }) {
       <div className="land">
         <div className="lnav">
           <button className="logo" onClick={() => go({ v: "landing" })}>
-            <Mark /><span className="wm">Equilibrium</span>
+            <Mark /><Wordmark />
           </button>
           <span style={{ display: "flex", gap: 10, alignItems: "center" }}>
             <button className="tgl" onClick={nav.toggleTheme} aria-label="Switch theme">
@@ -1140,7 +1156,7 @@ function AuthPage({ mode, go, nav }) {
     <div className="auth">
       <div className="authform">
         <button className="logo" style={{ marginBottom: 30 }} onClick={() => go({ v: "landing" })}>
-          <Mark /><span className="wm">Equilibrium</span>
+          <Mark /><Wordmark />
         </button>
         {sent ? (
           <>
@@ -1203,7 +1219,7 @@ function ForgotPage({ go }) {
     <div className="auth">
       <div className="authform">
         <button className="logo" style={{ marginBottom: 30 }} onClick={() => go({ v: "landing" })}>
-          <Mark /><span className="wm">Equilibrium</span>
+          <Mark /><Wordmark />
         </button>
         {sent ? (
           <>
@@ -1252,7 +1268,7 @@ function ResetPage({ go }) {
     <div className="auth">
       <div className="authform">
         <button className="logo" style={{ marginBottom: 30 }} onClick={() => go({ v: "landing" })}>
-          <Mark /><span className="wm">Equilibrium</span>
+          <Mark /><Wordmark />
         </button>
         {done ? (
           <>
@@ -1623,8 +1639,9 @@ function Shell({ nav, active, children }) {
     <div className="shell">
       {open && <div className="scrim" onClick={() => setOpen(false)} />}
       <aside className={"side" + (open ? " open" : "")}>
-        <button className="brand" onClick={() => { setOpen(false); go({ v: "home" }); }}>
-          <Mark /><span className="wm lbl">Equilibrium</span>
+        <button className="brand" onClick={() => { setOpen(false); go({ v: "home" }); }} title="AP Equilibrium">
+          <span className="mk2"><Mark size={28} /></span>
+          <Wordmark size={20} />
         </button>
         {item("home", "Home", I.home, { v: "home" })}
         {item("tutor", "Ask Equi tutor", I.tutor, { v: "tutor" })}
@@ -1651,7 +1668,7 @@ function Shell({ nav, active, children }) {
       <div className="main">
         <div className="mtop">
           <button className="mini" onClick={() => setOpen(true)} aria-label="Open menu">☰</button>
-          <Mark size={22} /><span className="wm" style={{ fontSize: 17 }}>Equilibrium</span>
+          <Mark size={22} /><Wordmark size={17} />
         </div>
         {children}
       </div>
@@ -2702,7 +2719,7 @@ function Admin({ bank, setBank, refreshBank, go, admin }) {
   return (
     <div className="wrap">
       <div className="navin" style={{ borderBottom: "1px solid var(--line)" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}><Mark size={24} /><span className="wm" style={{ fontSize: 17 }}>Console</span></div>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}><Mark size={24} /><span className="wm" style={{ fontSize: 17 }}><span className="ap">AP</span> Console</span></div>
         <span style={{ display: "flex", gap: 8 }}>
           <button className="mini" onClick={() => go({ v: "home" })}>View site</button>
           <button className="mini" onClick={async () => { await signOut(); setAuthed(false); }}>Sign out</button>

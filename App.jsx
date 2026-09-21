@@ -3173,19 +3173,21 @@ function ASettings({ bank, refreshBank, reload }) {
 
   const exportAll = () => setIo(JSON.stringify({ questions: bank.questions, materials: bank.materials }, null, 2));
 
-  const importAll = async () => {
+  const importAll = async (text) => {
     setBusy(true);
     try {
-      const raw = JSON.parse(io);
+      const raw = JSON.parse(typeof text === "string" ? text : io);
       const qArr = Array.isArray(raw) ? raw : raw.questions || [];
       const mArr = Array.isArray(raw) ? [] : raw.materials || [];
       const qs = qArr.filter((q) => q && q.stem && Array.isArray(q.choices)).map((q) => ({
         id: q.id || uid(), subject: q.subject === "macro" ? "macro" : "micro",
         unit: Math.min(6, Math.max(1, Number(q.unit) || 1)),
+        topic: typeof q.topic === "string" ? q.topic : "",
         difficulty: ["easy", "medium", "hard"].includes(q.difficulty) ? q.difficulty : "medium",
         stem: String(q.stem), choices: q.choices.map(String),
         answer: Math.min(q.choices.length - 1, Math.max(0, Number(q.answer) || 0)),
         explanation: String(q.explanation || ""),
+        image: typeof q.image === "string" ? q.image : "",
       }));
       const ms = mArr.filter((m) => m && m.title).map((m) => ({
         id: m.id || uid(), subject: m.subject === "macro" ? "macro" : "micro",
@@ -3248,7 +3250,17 @@ function ASettings({ bank, refreshBank, reload }) {
       <textarea rows={9} value={io} onChange={(e) => setIo(e.target.value)} placeholder='{"questions":[…],"materials":[…]}' />
       <div className="actions" style={{ marginTop: 12 }}>
         <button className="btn sm ghost" onClick={exportAll}>Export everything</button>
-        <button className="btn sm" onClick={importAll} disabled={!io.trim() || busy}>{busy ? <><span className="spin" /> Importing</> : "Import"}</button>
+        <button className="btn sm" onClick={() => importAll()} disabled={!io.trim() || busy}>{busy ? <><span className="spin" /> Importing</> : "Import pasted text"}</button>
+        <label className="btn sm ghost" style={{ cursor: "pointer" }}>
+          Import from a file
+          <input type="file" accept=".json,application/json" style={{ display: "none" }}
+            onChange={async (e) => {
+              const f = e.target.files?.[0];
+              if (!f) return;
+              importAll(await f.text());
+              e.target.value = "";
+            }} />
+        </label>
       </div>
 
       <div className="sechead">Student results</div>

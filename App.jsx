@@ -735,6 +735,13 @@ const CSS = `
 .eq .qopen{width:100%;text-align:left;border-left:0;border-right:0;border-top:0;cursor:pointer;color:inherit;}
 .eq .qopen:hover{background:var(--surf2);}
 .eq .qopen .st{color:var(--accent);}
+.eq .tally{display:flex;gap:1px;background:var(--line);border:1px solid var(--line);border-radius:13px;
+  overflow:hidden;margin-top:22px;max-width:560px;}
+.eq .tally div{flex:1;background:var(--bg2);padding:14px 16px;display:flex;align-items:center;gap:10px;}
+.eq .tally b{font-size:22px;font-weight:600;}
+.eq .tally span:last-child{font-size:12.5px;color:var(--tx3);}
+.eq .linkish{background:none;border:0;padding:0;margin-left:10px;color:var(--accent);font-weight:600;
+  text-decoration:underline;text-underline-offset:3px;}
 .eq .clamp2{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
 @media (max-width:640px){ .eq .rvbody{padding-left:18px;} .eq .btn.submit{padding:10px 18px;} }
 .eq .gcell.ok{background:var(--okbg);border-color:var(--ok);color:var(--ok);}
@@ -2037,7 +2044,13 @@ function Bank({ subject, bank, me, nav }) {
   const forTopic = (code) => pool.filter((q) => q.topic === code);
   const total = pool.length;
 
-  const start = (list) => { if (list.length) go({ v: "practice", subject, unit: 0, pool: shuffle(list) }); };
+  /* Questions come in course order: every question of the first topic, then the next. */
+  const byTopic = (list) => list.slice().sort((a, b) => {
+    const [au, at] = String(a.topic || "9.9").split(".").map(Number);
+    const [bu, bt] = String(b.topic || "9.9").split(".").map(Number);
+    return au - bu || at - bt || String(a.id).localeCompare(String(b.id), undefined, { numeric: true });
+  });
+  const start = (list) => { if (list.length) go({ v: "practice", subject, unit: 0, pool: byTopic(list) }); };
   const startPicked = () => start(pool.filter((q) => picked.includes(q.topic)));
   const toggle = (code) => setPicked((p) => (p.includes(code) ? p.filter((x) => x !== code) : [...p, code]));
 
@@ -2066,11 +2079,25 @@ function Bank({ subject, bank, me, nav }) {
         </div>
 
         <div className="allcard">
-          <div>
-            <h3>Practise every topic</h3>
-            <p>{total ? `${total} question${total === 1 ? "" : "s"} across all six units.` : "No questions here yet."}</p>
-          </div>
-          <button className="btn acc" disabled={!total} onClick={() => start(pool)}>Start practice</button>
+          {picked.length > 0 ? (
+            <div>
+              <h3>Practise the topics you picked</h3>
+              <p>
+                {pickedCount} question{pickedCount === 1 ? "" : "s"} from {picked.length} topic{picked.length === 1 ? "" : "s"}: {picked.slice().sort((a, b) => parseFloat(a) - parseFloat(b)).join(", ")}
+                <button className="linkish" onClick={() => setPicked([])}>Clear</button>
+              </p>
+            </div>
+          ) : (
+            <div>
+              <h3>Practise every topic</h3>
+              <p>{total ? `${total} question${total === 1 ? "" : "s"} across all six units. Tick topics below to narrow it down.` : "No questions here yet."}</p>
+            </div>
+          )}
+          <button className="btn acc"
+            disabled={picked.length > 0 ? !pickedCount : !total}
+            onClick={() => (picked.length > 0 ? startPicked() : start(pool))}>
+            Start practice
+          </button>
         </div>
 
         {UNITS[subject].map((u) => {
@@ -2169,13 +2196,18 @@ function Practice({ subject, unit, pool, go, onFinish, nav }) {
     setAns((p) => ({ ...p, [q.id]: { picked, checked: true } }));
   }, [q.id, picked, revealed]);
 
+  /* Every question in the set goes to the results: answered ones are marked
+     whether or not Check was pressed, and untouched ones count as skipped. */
   const finish = useCallback(() => {
     if (doneRef.current) return;
     doneRef.current = true;
-    const items = pool.filter((x) => ans[x.id]?.checked)
-      .map((x) => ({ id: x.id, picked: ans[x.id].picked, correct: ans[x.id].picked === x.answer, q: x }));
-    if (items.length) onFinish({ subject, unit, items, secs });
-    go(items.length ? { v: "results", subject, unit, items, secs } : { v: "bank", subject });
+    const items = pool.map((x, i) => {
+      const picked = ans[x.id]?.picked ?? null;
+      return { id: x.id, n: i + 1, picked, correct: picked !== null && picked === x.answer, q: x };
+    });
+    const answered = items.filter((it) => it.picked !== null);
+    if (answered.length) onFinish({ subject, unit, items: answered, secs });
+    go({ v: "results", subject, unit, items, secs });
   }, [pool, ans, secs, subject, unit, onFinish, go]);
 
   const next = useCallback(() => { if (last) finish(); else setIdx((i) => i + 1); }, [last, finish]);
@@ -2309,18 +2341,18 @@ function Practice({ subject, unit, pool, go, onFinish, nav }) {
    Every question in full: stem, figure, all choices marked, explanation.
 --------------------------------------------------------------------------- */
 
-function ReviewList({ items }) {
+function ReviewList({ items, defaultOpen = false }) {
   return (
     <div className="rv">
       {items.map((it, i) => {
         const blank = it.picked === null || it.picked === undefined;
         return (
-          <details key={i} className="rvi">
+          <details key={i} className="rvi" open={defaultOpen}>
             <summary>
-              <span className="rvn num">{i + 1}</span>
+              <span className="rvn num">{it.n ?? i + 1}</span>
               <span className="rvs">{it.q.stem}</span>
               <span className="rvst">
-                {blank ? <span className="rvblank" title="Left blank" /> : <StatusIcon kind={it.correct ? "ok" : "no"} />}
+                {blank ? <span className="rvblank" title="Skipped" /> : <StatusIcon kind={it.correct ? "ok" : "no"} />}
               </span>
             </summary>
             <div className="rvbody">
@@ -2340,7 +2372,7 @@ function ReviewList({ items }) {
                   </div>
                 );
               })}
-              {blank && <div className="hint" style={{ margin: "4px 0 10px" }}>You left this question blank.</div>}
+              {blank && <div className="hint" style={{ margin: "4px 0 10px" }}>You skipped this question.</div>}
               <div className="rvexp">{it.q.explanation}</div>
             </div>
           </details>
@@ -2354,24 +2386,63 @@ function ReviewList({ items }) {
 
 function Results({ subject, unit, items, secs, nav }) {
   const { go } = nav;
-  const correct = items.filter((i) => i.correct).length;
-  const p = pct(correct, items.length) ?? 0;
-  const verdict = p >= 85 ? "Strong. Move to a heavier unit." : p >= 60 ? "Close. Redo the ones you missed today, not next week." : "Read every explanation below before trying this unit again.";
+  const [show, setShow] = useState("all");
+  const [openAll, setOpenAll] = useState(true);
+  const answered = items.filter((i) => i.picked !== null && i.picked !== undefined);
+  const right = answered.filter((i) => i.correct);
+  const wrong = answered.filter((i) => !i.correct);
+  const skipped = items.filter((i) => i.picked === null || i.picked === undefined);
+  const p = pct(right.length, answered.length);
+  const verdict = !answered.length ? "You did not answer any questions in this set."
+    : p >= 85 ? "Strong. Move to a heavier unit."
+      : p >= 60 ? "Close. Redo the ones you missed today, not next week."
+        : "Read every explanation below before trying these topics again.";
+  const list = show === "wrong" ? wrong : show === "skipped" ? skipped : show === "right" ? right : items;
+
   return (
     <div className="wrap">
       <div className="crumb">
         <button onClick={() => go({ v: "bank", subject })}>Question bank</button><span>/</span>
-        <span>{unit === 0 ? "Practice set" : `Unit ${unit}`}</span>
+        <span>Results</span>
       </div>
       <div className="score">
-        <div className="n">{p}%</div>
-        <div className="side"><b>{correct} of {items.length} correct</b>{mmss(secs)} total · {items.length ? Math.round(secs / items.length) : 0}s per question</div>
-        <div className="side" style={{ marginLeft: "auto", maxWidth: 260, color: "var(--tx2)" }}>{verdict}</div>
+        <div className="n">{p === null ? "—" : p + "%"}</div>
+        <div className="side">
+          <b>{right.length} of {answered.length} answered correctly</b>
+          {mmss(secs)} total{answered.length ? ` · ${Math.round(secs / answered.length)}s per question` : ""}
+        </div>
+        <div className="side" style={{ marginLeft: "auto", maxWidth: 270, color: "var(--tx2)" }}>{verdict}</div>
       </div>
-      <ReviewList items={items} />
+
+      <div className="tally">
+        <div><StatusIcon kind="ok" /><b className="num">{right.length}</b><span>correct</span></div>
+        <div><StatusIcon kind="no" /><b className="num">{wrong.length}</b><span>incorrect</span></div>
+        <div><span className="rvblank" /><b className="num">{skipped.length}</b><span>skipped</span></div>
+      </div>
+
+      <div className="filters" style={{ marginTop: 26, marginBottom: 0 }}>
+        {[["all", `All (${items.length})`], ["wrong", `Incorrect (${wrong.length})`],
+          ["skipped", `Skipped (${skipped.length})`], ["right", `Correct (${right.length})`]].map(([k, v]) => (
+          <button key={k} className={"fbtn" + (show === k ? " on" : "")} onClick={() => setShow(k)}>{v}</button>
+        ))}
+      </div>
+
+      {list.length > 0 && (
+        <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 14 }}>
+          <button className="mini" onClick={() => setOpenAll((v) => !v)}>{openAll ? "Collapse all" : "Expand all"}</button>
+        </div>
+      )}
+      {list.length === 0
+        ? <div className="empty" style={{ marginTop: 18 }}>Nothing in this group.</div>
+        : <ReviewList key={show + String(openAll)} items={list} defaultOpen={openAll} />}
+
       <div className="actions" style={{ paddingBottom: 50 }}>
-        <button className="btn acc" onClick={() => go({ v: "bank", subject })}>Back to the question bank</button>
-        <button className="btn ghost" onClick={() => go({ v: "tutor" })}>Ask the tutor about a question</button>
+        {wrong.length + skipped.length > 0 && (
+          <button className="btn acc" onClick={() => go({ v: "practice", subject, unit: 0, pool: shuffle([...wrong, ...skipped].map((i) => i.q)) })}>
+            Redo the {wrong.length + skipped.length} I missed or skipped
+          </button>
+        )}
+        <button className="btn ghost" onClick={() => go({ v: "bank", subject })}>Back to the question bank</button>
       </div>
     </div>
   );
@@ -2747,6 +2818,7 @@ function Mock({ subject, pool, go, onFinish, nav, resume }) {
 
 function MockResult({ subject, items, secs, bands, nav }) {
   const { go } = nav;
+  const [openAll, setOpenAll] = useState(false);
   const b = (bands && bands[subject]) || DEFAULT_BANDS[subject];
   const n = items.length;
   const correct = items.filter((i) => i.correct).length;
@@ -2809,8 +2881,11 @@ function MockResult({ subject, items, secs, bands, nav }) {
           </div>
         ))}
 
-        <div className="sechead">Every question</div>
-        <ReviewList items={items} />
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+          <div className="sechead">Every question</div>
+          <button className="mini" onClick={() => setOpenAll((v) => !v)}>{openAll ? "Collapse all" : "Show every explanation"}</button>
+        </div>
+        <ReviewList key={String(openAll)} items={items.map((it, i) => ({ ...it, n: i + 1 }))} defaultOpen={openAll} />
 
         <div className="actions" style={{ paddingBottom: 54 }}>
           <button className="btn acc" onClick={() => go({ v: "tests" })}>Back to full-length tests</button>

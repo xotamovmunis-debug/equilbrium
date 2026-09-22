@@ -2168,6 +2168,7 @@ function Practice({ subject, unit, pool, go, onFinish, nav }) {
   const [secs, setSecs] = useState(0);
   const [paused, setPaused] = useState(false);
   const [grid, setGrid] = useState(false);
+  const [confirm, setConfirm] = useState(false);
   const [help, setHelp] = useState({});        // id -> tutor text
   const [helping, setHelping] = useState(false);
   const [savedIds, setSavedIds] = useLocal("equilibrium:saved", []);
@@ -2210,12 +2211,12 @@ function Practice({ subject, unit, pool, go, onFinish, nav }) {
     go({ v: "results", subject, unit, items, secs });
   }, [pool, ans, secs, subject, unit, onFinish, go]);
 
-  const next = useCallback(() => { if (last) finish(); else setIdx((i) => i + 1); }, [last, finish]);
+  const next = useCallback(() => { if (last) setConfirm(true); else setIdx((i) => i + 1); }, [last]);
   const prev = useCallback(() => setIdx((i) => Math.max(0, i - 1)), []);
 
   useEffect(() => {
     const h = (e) => {
-      if (grid) return;
+      if (grid || confirm) return;
       if (e.target && ["TEXTAREA", "INPUT"].includes(e.target.tagName)) return;
       if (!revealed) {
         const li = L.indexOf(e.key.toUpperCase());
@@ -2229,7 +2230,7 @@ function Practice({ subject, unit, pool, go, onFinish, nav }) {
     };
     window.addEventListener("keydown", h);
     return () => window.removeEventListener("keydown", h);
-  }, [q, revealed, pick, check, next, prev, grid]);
+  }, [q, revealed, pick, check, next, prev, grid, confirm]);
 
   const askDeeper = async () => {
     setHelping(true);
@@ -2261,7 +2262,7 @@ function Practice({ subject, unit, pool, go, onFinish, nav }) {
             <button onClick={() => go({ v: "bank", subject })}>Question bank</button>
             <span>/</span><span>{label}</span>
           </span>
-          <button className="mini" onClick={finish}>End set</button>
+          <button className="mini" onClick={() => setConfirm(true)}>End set</button>
         </div>
 
         <Timer seconds={secs} paused={paused} onToggle={() => setPaused((v) => !v)} />
@@ -2298,6 +2299,26 @@ function Practice({ subject, unit, pool, go, onFinish, nav }) {
         </div>
       </div>
 
+      {confirm && (() => {
+        const done = pool.filter((x) => ans[x.id]?.picked !== undefined && ans[x.id]?.picked !== null).length;
+        const open = pool.length - done;
+        return (
+          <div className="sheet" onClick={() => setConfirm(false)}>
+            <div className="sheetin" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 440 }}>
+              <h2 style={{ fontSize: 22, marginBottom: 10 }}>Finish this set?</h2>
+              <p style={{ color: "var(--tx2)", fontSize: 14.5, marginTop: 0 }}>
+                {open === 0
+                  ? "Every question is answered. You will see your results and every explanation next."
+                  : `${open} question${open === 1 ? " is" : "s are"} still unanswered. ${open === 1 ? "It" : "They"} will show as skipped in your results, with the correct answer and explanation.`}
+              </p>
+              <div className="actions">
+                <button className="btn submit" onClick={finish}>Finish</button>
+                <button className="btn ghost" onClick={() => setConfirm(false)}>Keep working</button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
       {grid && (
         <div className="sheet" onClick={() => setGrid(false)}>
           <div className="qmap" onClick={(e) => e.stopPropagation()}>

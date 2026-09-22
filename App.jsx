@@ -705,9 +705,9 @@ const CSS = `
 .eq .qmcell.now{border-color:var(--tx);box-shadow:0 0 0 2px var(--bg2),0 0 0 3.5px var(--tx);}
 .eq .qmbadge{position:absolute;top:-7px;right:-7px;display:flex;border-radius:50%;
   background:var(--bg2);padding:1.5px;line-height:0;}
-.eq .btn.submit{padding:11px 26px;font-size:15px;font-weight:700;border:0;border-radius:11px;color:#0A0F18;
-  background:linear-gradient(96deg,var(--micro),var(--macro));
-  box-shadow:0 10px 26px -12px color-mix(in srgb,var(--macro) 80%,transparent);letter-spacing:.01em;}
+.eq .btn.submit{padding:10px 24px;font-size:14.5px;font-weight:700;border-radius:10px;
+  background:var(--accent);border:1px solid var(--accent);color:var(--onacc);
+  box-shadow:0 8px 22px -14px var(--accent);}
 .eq .btn.submit:hover{filter:brightness(1.08);transform:translateY(-1px);}
 .eq .rv{border:1px solid var(--line);border-radius:14px;overflow:hidden;margin:18px 0 40px;}
 .eq .rvi{border-bottom:1px solid var(--line);background:var(--bg2);}
@@ -1814,11 +1814,32 @@ function Highlightable({ text, marks, onAdd, onRemove }) {
   };
 
   const apply = (c) => {
-    if (c) onAdd({ start: pop.start, end: pop.end, c });
-    else onRemove(pop.start, pop.end);
+    onAdd({ start: pop.start, end: pop.end, c });
     window.getSelection()?.removeAllRanges();
     setPop(null);
   };
+
+  /* Close the palette on any press outside it, on Escape, or on scroll. */
+  const popRef = useRef(null);
+  useEffect(() => {
+    if (!pop) return;
+    const away = (e) => { if (popRef.current && !popRef.current.contains(e.target)) setPop(null); };
+    const esc = (e) => { if (e.key === "Escape") setPop(null); };
+    const close = () => setPop(null);
+    const t = setTimeout(() => {
+      document.addEventListener("mousedown", away);
+      document.addEventListener("touchstart", away);
+    }, 0);
+    window.addEventListener("keydown", esc);
+    window.addEventListener("scroll", close, true);
+    return () => {
+      clearTimeout(t);
+      document.removeEventListener("mousedown", away);
+      document.removeEventListener("touchstart", away);
+      window.removeEventListener("keydown", esc);
+      window.removeEventListener("scroll", close, true);
+    };
+  }, [pop]);
 
   /* Colour every character, then walk the run. Overlapping marks simply
      paint over each other, so no span is ever emitted twice. */
@@ -1847,16 +1868,13 @@ function Highlightable({ text, marks, onAdd, onRemove }) {
           title="Click to remove" onClick={() => onRemove(p.start, p.end)}>{p.t}</mark>
         : <span key={i}>{p.t}</span>)}
       {pop && (
-        <span className="hlpop" style={{ left: Math.max(0, pop.x - 58), top: Math.max(-10, pop.y) }}
+        <span className="hlpop" ref={popRef} style={{ left: Math.max(0, pop.x - 46), top: Math.max(-10, pop.y) }}
           onMouseDown={(e) => e.preventDefault()}>
           {HL_COLORS.map((c) => (
             <button key={c} className="swatch" style={{ background: c }} onClick={() => apply(c)}
               aria-label="Highlight in this colour" />
           ))}
-          <button className="swatch erase" onClick={() => apply(null)} aria-label="Remove the highlight">
-            <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.8"
-              strokeLinecap="round"><path d="M2.4 2.4 9.6 9.6M9.6 2.4 2.4 9.6" /></svg>
-          </button>
+
         </span>
       )}
     </p>
@@ -2517,9 +2535,17 @@ function Planner({ bank, me, nav }) {
 
 function Tests({ bank, nav }) {
   const { go } = nav;
+  const [, force] = useState(0);
   const startTest = (subject) => {
+    clearSavedTest(subject);
     const p = buildMock(bank.questions, subject);
     if (p.length >= 5) go({ v: "mock", subject, pool: p });
+  };
+  const resumeTest = (subject, saved) => {
+    const byId = new Map(bank.questions.map((q) => [q.id, q]));
+    const pool = saved.ids.map((id) => byId.get(id)).filter(Boolean);
+    if (pool.length < 5) { clearSavedTest(subject); force((n) => n + 1); return; }
+    go({ v: "mock", subject, pool, resume: { ans: saved.ans || {}, left: saved.left, idx: Math.min(saved.idx || 0, pool.length - 1) } });
   };
   return (
     <div className="wrap">
@@ -2543,9 +2569,26 @@ function Tests({ bank, nav }) {
                 <div><b className="num">70s</b><span>per question</span></div>
               </div>
             </div>
-            <button className="btn" onClick={() => startTest(sub)} disabled={n < 5}>
-              {n < 5 ? "Needs at least 5 questions" : "Start the test"}
-            </button>
+            {(() => {
+              const saved = loadSavedTest(sub);
+              if (saved && saved.ids?.length) {
+                const done = Object.keys(saved.ans || {}).length;
+                return (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8, alignItems: "flex-end" }}>
+                    <button className="btn acc" onClick={() => resumeTest(sub, saved)}>Resume the test</button>
+                    <span className="hint">{done} of {saved.ids.length} answered · {mmss(saved.left || 0)} left</span>
+                    <button className="mini" onClick={() => { if (window.confirm("Discard the saved test and start a new one?")) startTest(sub); }}>
+                      Start a new test instead
+                    </button>
+                  </div>
+                );
+              }
+              return (
+                <button className="btn" onClick={() => startTest(sub)} disabled={n < 5}>
+                  {n < 5 ? "Needs at least 5 questions" : "Start the test"}
+                </button>
+              );
+            })()}
           </div>
         );
       })}
@@ -2556,10 +2599,16 @@ function Tests({ bank, nav }) {
 
 /* ---------------------------- mock exam ---------------------------- */
 
-function Mock({ subject, pool, go, onFinish, nav }) {
-  const [idx, setIdx] = useState(0);
-  const [ans, setAns] = useState({});
-  const [left, setLeft] = useState(Math.min(4200, pool.length * 70));
+const testKey = (subject) => `equilibrium:test:${subject}`;
+const loadSavedTest = (subject) => {
+  try { return JSON.parse(localStorage.getItem(testKey(subject))); } catch { return null; }
+};
+const clearSavedTest = (subject) => { try { localStorage.removeItem(testKey(subject)); } catch { /* ignore */ } };
+
+function Mock({ subject, pool, go, onFinish, nav, resume }) {
+  const [idx, setIdx] = useState(resume?.idx ?? 0);
+  const [ans, setAns] = useState(resume?.ans ?? {});
+  const [left, setLeft] = useState(resume?.left ?? Math.min(4200, pool.length * 70));
   const [grid, setGrid] = useState(false);
   const [confirm, setConfirm] = useState(false);
   const [savedIds, setSavedIds] = useLocal("equilibrium:saved", []);
@@ -2573,9 +2622,22 @@ function Mock({ subject, pool, go, onFinish, nav }) {
     doneRef.current = true;
     const items = pool.map((x) => ({ id: x.id, picked: ans[x.id] ?? null, correct: ans[x.id] === x.answer, q: x }));
     const secs = Math.min(4200, pool.length * 70) - left;
+    clearSavedTest(subject);
     onFinish({ subject, unit: 0, mode: "test", items: items.filter((i) => i.picked !== null), secs });
     go({ v: "mockresult", subject, items, secs });
   }, [pool, ans, left, subject, onFinish, go]);
+
+  /* Keep a copy on the device the whole time, so closing the tab loses nothing. */
+  useEffect(() => {
+    if (doneRef.current) return;
+    try {
+      localStorage.setItem(testKey(subject), JSON.stringify({
+        ids: pool.map((x) => x.id), ans, left, idx, savedAt: Date.now(),
+      }));
+    } catch { /* storage full or private mode */ }
+  }, [subject, pool, ans, left, idx]);
+
+  const saveAndExit = () => go({ v: "tests" });
 
   useEffect(() => {
     const t = setInterval(() => setLeft((x) => { if (x <= 1) { clearInterval(t); finish(); return 0; } return x - 1; }), 1000);
@@ -2603,7 +2665,10 @@ function Mock({ subject, pool, go, onFinish, nav }) {
   return (
     <>
       <div className="wrap" style={{ maxWidth: 860 }}>
-        <div className="crumb"><span>Full-length test · AP {SNAME[subject]}</span></div>
+        <div className="crumb" style={{ justifyContent: "space-between" }}>
+          <span>Full-length test · AP {SNAME[subject]}</span>
+          <button className="mini" onClick={saveAndExit}>Save and exit</button>
+        </div>
         <div className="timer">
           <div className={"digits" + (left < 300 ? " lowtime" : "")}>{mmss(left)}</div>
         </div>
@@ -2622,12 +2687,9 @@ function Mock({ subject, pool, go, onFinish, nav }) {
           </button>
           <span style={{ flex: 1 }} />
           <button className="btn ghost sm" onClick={prev} disabled={idx === 0}>Previous</button>
-          <button className="btn sm" onClick={next} disabled={last}>Next</button>
-          <button className="btn submit" onClick={() => setConfirm(true)}>
-            Submit
-            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2"
-              strokeLinecap="round" strokeLinejoin="round"><path d="M3 8.5 6.4 12 13 4.5" /></svg>
-          </button>
+          {last
+            ? <button className="btn submit" onClick={() => setConfirm(true)}>Submit test</button>
+            : <button className="btn sm acc" onClick={next}>Next</button>}
         </div>
       </div>
 

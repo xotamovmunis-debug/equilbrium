@@ -672,6 +672,15 @@ const CSS = `
   display:flex;align-items:center;justify-content:center;}
 .eq .swatch.erase:hover{color:var(--no);border-color:var(--no);}
 .eq .qbody{position:relative;}
+.eq .pfoot{position:fixed;left:0;right:0;bottom:0;z-index:35;background:var(--navbg);backdrop-filter:blur(14px);
+  border-top:1px solid var(--line);}
+.eq .pfin{max-width:860px;margin:0 auto;padding:12px 24px;display:flex;align-items:center;gap:10px;}
+.eq .qcount{display:inline-flex;align-items:center;gap:8px;background:var(--tx);color:var(--bg);border:0;
+  border-radius:10px;padding:9px 16px;font-weight:600;font-size:14px;}
+.eq .qcount:hover{filter:brightness(1.12);}
+.eq .gcell.ok{background:var(--okbg);border-color:var(--ok);color:var(--ok);}
+.eq .gcell.no{background:var(--nobg);border-color:var(--no);color:var(--no);}
+@media (max-width:640px){ .eq .pkeys{display:none;} .eq .pfin{padding:10px 14px;gap:8px;} }
 .eq .notepad{border:1px solid var(--line);border-radius:12px;background:var(--surf);padding:14px;margin-bottom:22px;}
 .eq .notepad textarea{background:var(--bg2);}
 
@@ -2029,15 +2038,22 @@ function Bank({ subject, bank, me, nav }) {
 
 function Practice({ subject, unit, pool, go, onFinish, nav }) {
   const [idx, setIdx] = useState(0);
-  const [picked, setPicked] = useState(null);
-  const [revealed, setRevealed] = useState(false);
-  const [items, setItems] = useState([]);
+  /* Every question keeps its own state, so Previous shows what you did. */
+  const [ans, setAns] = useState({});          // id -> { picked, checked }
   const [secs, setSecs] = useState(0);
   const [paused, setPaused] = useState(false);
-  const [help, setHelp] = useState(null);
+  const [grid, setGrid] = useState(false);
+  const [help, setHelp] = useState({});        // id -> tutor text
   const [helping, setHelping] = useState(false);
   const [savedIds, setSavedIds] = useLocal("equilibrium:saved", []);
+  const doneRef = useRef(false);
+
   const q = pool[idx];
+  const cur = ans[q.id] || {};
+  const picked = cur.picked ?? null;
+  const revealed = Boolean(cur.checked);
+  const last = idx + 1 >= pool.length;
+  const checkedCount = Object.values(ans).filter((a) => a.checked).length;
 
   useEffect(() => {
     if (paused) return;
@@ -2045,70 +2061,83 @@ function Practice({ subject, unit, pool, go, onFinish, nav }) {
     return () => clearInterval(t);
   }, [paused]);
 
+  const pick = useCallback((i) => {
+    if (revealed) return;
+    setAns((p) => ({ ...p, [q.id]: { picked: i, checked: false } }));
+  }, [q.id, revealed]);
+
   const check = useCallback(() => {
     if (picked === null || revealed) return;
-    setRevealed(true);
-    setItems((p) => [...p, { id: q.id, picked, correct: picked === q.answer, q }]);
-  }, [picked, revealed, q]);
+    setAns((p) => ({ ...p, [q.id]: { picked, checked: true } }));
+  }, [q.id, picked, revealed]);
 
-  const next = useCallback(() => {
-    if (idx + 1 >= pool.length) {
-      onFinish({ subject, unit, items, secs });
-      go({ v: "results", subject, unit, items, secs });
-    } else {
-      setIdx((i) => i + 1); setPicked(null); setRevealed(false); setHelp(null);
-    }
-  }, [idx, pool.length, items, secs, subject, unit, onFinish, go]);
+  const finish = useCallback(() => {
+    if (doneRef.current) return;
+    doneRef.current = true;
+    const items = pool.filter((x) => ans[x.id]?.checked)
+      .map((x) => ({ id: x.id, picked: ans[x.id].picked, correct: ans[x.id].picked === x.answer, q: x }));
+    if (items.length) onFinish({ subject, unit, items, secs });
+    go(items.length ? { v: "results", subject, unit, items, secs } : { v: "bank", subject });
+  }, [pool, ans, secs, subject, unit, onFinish, go]);
+
+  const next = useCallback(() => { if (last) finish(); else setIdx((i) => i + 1); }, [last, finish]);
+  const prev = useCallback(() => setIdx((i) => Math.max(0, i - 1)), []);
 
   useEffect(() => {
     const h = (e) => {
+      if (grid) return;
       if (e.target && ["TEXTAREA", "INPUT"].includes(e.target.tagName)) return;
       if (!revealed) {
         const li = L.indexOf(e.key.toUpperCase());
         const ni = ["1", "2", "3", "4", "5", "6"].indexOf(e.key);
-        const pick = li >= 0 && li < q.choices.length ? li : ni >= 0 && ni < q.choices.length ? ni : -1;
-        if (pick >= 0) { e.preventDefault(); return setPicked(pick); }
+        const k = li >= 0 && li < q.choices.length ? li : ni >= 0 && ni < q.choices.length ? ni : -1;
+        if (k >= 0) { e.preventDefault(); return pick(k); }
       }
       if (e.key === "Enter") { e.preventDefault(); revealed ? next() : check(); }
+      if (e.key === "ArrowRight") { e.preventDefault(); next(); }
+      if (e.key === "ArrowLeft") { e.preventDefault(); prev(); }
     };
     window.addEventListener("keydown", h);
     return () => window.removeEventListener("keydown", h);
-  }, [q, revealed, check, next]);
+  }, [q, revealed, pick, check, next, prev, grid]);
 
   const askDeeper = async () => {
     setHelping(true);
     try {
-      setHelp(await askClaude(
+      const txt = await askClaude(
         [{ role: "user", content: `AP ${SNAME[subject]} question:\n\n${q.stem}\n\n${q.choices.map((c, i) => `${L[i]}. ${c}`).join("\n")}\n\nCorrect answer: ${L[q.answer]}\nI chose ${L[picked]}.\n\nExplain this a different way from a standard answer key. Use the relevant graph and walk through what shifts and why. Under 160 words.` }],
-        "You are an AP Economics tutor. Be precise with terminology, reference the exact graph and curves involved, and never pad. Plain text, no markdown.", 600));
-    } catch { setHelp("The tutor could not be reached. Try again in a moment."); }
+        "You are an AP Economics tutor. Be precise with terminology, reference the exact graph and curves involved, and never pad. Plain text, no markdown.", 600);
+      setHelp((p) => ({ ...p, [q.id]: txt }));
+    } catch { setHelp((p) => ({ ...p, [q.id]: "The tutor could not be reached. Try again in a moment." })); }
     setHelping(false);
   };
 
-  const label = q.topic ? `${q.topic} ${topicTitle(subject, q.topic)}`
-    : unit === 0 ? "Mixed set" : `Unit ${unit}`;
+  const label = q.topic ? `${q.topic} ${topicTitle(subject, q.topic)}` : unit === 0 ? "Mixed set" : `Unit ${unit}`;
+  const cellClass = (x, i) => {
+    const a = ans[x.id];
+    let c = "gcell";
+    if (a?.checked) c += a.picked === x.answer ? " ok" : " no";
+    else if (a?.picked !== undefined && a?.picked !== null) c += " done";
+    if (i === idx) c += " now";
+    if (savedIds.includes(x.id)) c += " fl";
+    return c;
+  };
 
   return (
     <>
-      <div className="wrap" style={{ maxWidth: 820 }}>
+      <div className="wrap" style={{ maxWidth: 860 }}>
         <div className="crumb" style={{ justifyContent: "space-between" }}>
           <span style={{ display: "flex", gap: 9, alignItems: "center" }}>
             <button onClick={() => go({ v: "bank", subject })}>Question bank</button>
             <span>/</span><span>{label}</span>
           </span>
-          <button className="mini" onClick={() => go({ v: "bank", subject })}>End set</button>
+          <button className="mini" onClick={finish}>End set</button>
         </div>
 
         <Timer seconds={secs} paused={paused} onToggle={() => setPaused((v) => !v)} />
-        <div className="segs" style={{ marginBottom: 22 }}>
-          {pool.map((_, i) => {
-            const r = items[i];
-            return <div key={i} className={"seg " + (r ? (r.correct ? "ok" : "no") : i === idx ? "now" : "")} />;
-          })}
-        </div>
 
         <QuestionView q={q} index={idx} total={pool.length} picked={picked} revealed={revealed}
-          onPick={setPicked} saved={savedIds.includes(q.id)}
+          onPick={pick} saved={savedIds.includes(q.id)}
           onToggleSave={() => setSavedIds((p) => (p.includes(q.id) ? p.filter((x) => x !== q.id) : [...p, q.id]))} />
 
         {revealed && (
@@ -2117,281 +2146,48 @@ function Practice({ subject, unit, pool, go, onFinish, nav }) {
               {picked === q.answer ? "Correct" : `Not quite — the answer is ${L[q.answer]}`}
             </div>
             <p>{q.explanation}</p>
-            {help && <p style={{ marginTop: 16, paddingTop: 16, borderTop: "1px solid var(--line)" }}>{help}</p>}
-            {!help && <button className="mini" style={{ marginTop: 14 }} onClick={askDeeper} disabled={helping}>
+            {help[q.id] && <p style={{ marginTop: 16, paddingTop: 16, borderTop: "1px solid var(--line)" }}>{help[q.id]}</p>}
+            {!help[q.id] && <button className="mini" style={{ marginTop: 14 }} onClick={askDeeper} disabled={helping}>
               {helping ? <><span className="spin" /> Thinking</> : "Explain it another way"}</button>}
           </div>
         )}
+        <div style={{ height: 96 }} />
+      </div>
 
-        <div className="qfoot">
-          <span className="hint">
-            {revealed ? "Press Enter for the next question" : "Pick with A–E, then Enter to check"}
-          </span>
-          {revealed
-            ? <button className="btn acc" onClick={next}>{idx + 1 >= pool.length ? "See results" : "Next"}</button>
-            : <button className="btn" onClick={check} disabled={picked === null}>Check</button>}
+      <div className="pfoot">
+        <div className="pfin">
+          <button className="qcount" onClick={() => setGrid(true)} aria-label="Open the question map">
+            <span className="num">{idx + 1}</span> of <span className="num">{pool.length}</span>
+            <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.8"
+              strokeLinecap="round" strokeLinejoin="round"><path d="M2.5 4.5 6 8l3.5-3.5" /></svg>
+          </button>
+          <span className="hint pkeys">A–E to choose · Enter to check</span>
+          <span style={{ flex: 1 }} />
+          <button className="btn ghost sm" onClick={prev} disabled={idx === 0}>Previous</button>
+          <button className="btn sm" onClick={check} disabled={picked === null || revealed}>Check</button>
+          <button className="btn acc sm" onClick={next}>{last ? "Finish" : "Next"}</button>
         </div>
       </div>
-    </>
-  );
-}
 
-
-/* ---------------------------- saved and mistakes ---------------------------- */
-
-function Saved({ bank, me, nav }) {
-  const { go } = nav;
-  const [savedIds] = useLocal("equilibrium:saved", []);
-  const [notes] = useLocal("equilibrium:notes", {});
-  const [tab, setTab] = useState("saved");
-  const missed = me.missed || [];
-
-  const list = tab === "saved"
-    ? bank.questions.filter((q) => savedIds.includes(q.id))
-    : bank.questions.filter((q) => missed.includes(q.id));
-
-  const start = () => { if (list.length) go({ v: "practice", subject: list[0].subject, unit: 0, pool: shuffle(list) }); };
-
-  return (
-    <>
-      <div className="wrap">
-        <div className="phead" style={{ paddingTop: 30 }}>
-          <div>
-            <h1>Saved and mistakes</h1>
-            <div className="sub">Questions you marked for review, and every question you have got wrong and not yet fixed.</div>
-          </div>
-        </div>
-        <div className="filters">
-          <button className={"fbtn" + (tab === "saved" ? " on" : "")} onClick={() => setTab("saved")}>Marked for review ({savedIds.length})</button>
-          <button className={"fbtn" + (tab === "missed" ? " on" : "")} onClick={() => setTab("missed")}>Still getting wrong ({missed.length})</button>
-        </div>
-
-        {list.length === 0 ? (
-          <div className="empty">
-            <h3>Nothing here yet</h3>
-            {tab === "saved"
-              ? "Use the bookmark on any question to keep it for later."
-              : "Questions you answer incorrectly land here, and leave once you get them right."}
-          </div>
-        ) : (
-          <>
-            <div className="actions" style={{ marginTop: 0, marginBottom: 20 }}>
-              <button className="btn acc" onClick={start}>Practise these {list.length}</button>
-            </div>
-            <div className="qlist">
-              {list.map((q) => (
-                <div key={q.id} className="qitem">
-                  <span className="pill">{q.topic || (q.subject === "micro" ? "MI" : "MA") + "·" + q.unit}</span>
-                  <span>
-                    {q.stem.length > 96 ? q.stem.slice(0, 96) + "…" : q.stem}
-                    {notes[q.id] && <span className="hint" style={{ display: "block", marginTop: 4 }}>Note: {notes[q.id]}</span>}
-                  </span>
-                  <span className="st">{SSHORT[q.subject]}</span>
-                </div>
+      {grid && (
+        <div className="sheet" onClick={() => setGrid(false)}>
+          <div className="sheetin" onClick={(e) => e.stopPropagation()}>
+            <h2 style={{ fontSize: 21, marginBottom: 6 }}>Question map</h2>
+            <p className="hint" style={{ marginTop: 0, marginBottom: 14 }}>
+              {checkedCount} of {pool.length} checked. Green is right, red is wrong, a dot marks a saved question.
+            </p>
+            <div className="qgrid">
+              {pool.map((x, i) => (
+                <button key={x.id} className={cellClass(x, i)} onClick={() => { setIdx(i); setGrid(false); }}>{i + 1}</button>
               ))}
             </div>
-          </>
-        )}
-        <div style={{ height: 50 }} />
-      </div>
-    </>
-  );
-}
-
-/* ---------------------------- analytics ---------------------------- */
-
-function Analytics({ bank, me, nav }) {
-  const rows = (subject) => UNITS[subject].flatMap((u) =>
-    (TOPICS[subject][u.n] || []).map(([code, title]) => {
-      const st = (me.topic || {})[`${subject}-${code}`];
-      return { code, title, unit: u.n, a: st?.a || 0, p: st ? pct(st.c, st.a) : null };
-    })).filter((r) => r.a > 0);
-
-  const overall = (subject) => {
-    let a = 0, c = 0;
-    Object.entries(me.unit || {}).forEach(([k, v]) => { if (k.startsWith(subject + "-")) { a += v.a; c += v.c; } });
-    return { a, p: pct(c, a) };
-  };
-
-  return (
-    <>
-      <div className="wrap">
-        <div className="phead" style={{ paddingTop: 30 }}>
-          <div>
-            <h1>Analytics</h1>
-            <div className="sub">Your accuracy on every topic you have practised, weakest first. This is stored on this device.</div>
+            <div className="actions">
+              <button className="btn ghost" onClick={() => setGrid(false)}>Close</button>
+              <button className="btn acc" onClick={finish} disabled={!checkedCount}>Finish and see results</button>
+            </div>
           </div>
         </div>
-        {["micro", "macro"].map((sub) => {
-          const list = rows(sub).sort((x, y) => x.p - y.p);
-          const o = overall(sub);
-          return (
-            <div key={sub} style={{ marginBottom: 34, "--accent": sub === "micro" ? "var(--micro)" : "var(--macro)" }}>
-              <div className="ugtitle">
-                <h3>AP {SNAME[sub]}</h3>
-                <span className="num">{o.a ? `${o.p}% across ${o.a} questions` : "nothing yet"}</span>
-              </div>
-              {list.length === 0
-                ? <div className="empty" style={{ padding: 26 }}>Practise a topic and it will show up here.</div>
-                : <div className="btable">
-                  {list.map((r) => (
-                    <div className="brow" key={r.code} style={{ gridTemplateColumns: "1fr 150px 74px" }}>
-                      <span className="tp"><span className="tc">{r.code}</span><span className="tt">{r.title}</span></span>
-                      <span className="prog"><span className="bar"><i style={{ width: `${r.p}%` }} /></span>
-                        <span className="n">{r.a}</span></span>
-                      <span className="acc2">
-                        <span className="pip" style={{ background: r.p >= 80 ? "var(--ok)" : r.p >= 55 ? "var(--micro)" : "var(--no)" }} />
-                        {r.p}%
-                      </span>
-                    </div>
-                  ))}
-                </div>}
-            </div>
-          );
-        })}
-        <div style={{ height: 50 }} />
-      </div>
-    </>
-  );
-}
-
-/* ---------------------------- study planner ---------------------------- */
-
-function Planner({ bank, me, nav }) {
-  const { go } = nav;
-  const weak = (subject) => UNITS[subject].flatMap((u) =>
-    (TOPICS[subject][u.n] || []).map(([code, title]) => {
-      const st = (me.topic || {})[`${subject}-${code}`];
-      const have = bank.questions.filter((q) => q.subject === subject && q.topic === code).length;
-      return { code, title, weight: u.weight, have, a: st?.a || 0, p: st ? pct(st.c, st.a) : null };
-    })).filter((r) => r.have > 0);
-
-  /* Rank by what the exam rewards: heavy units you are weak or untested on. */
-  const plan = (subject) => weak(subject)
-    .map((r) => ({ ...r, score: r.weight * (r.p === null ? 1 : (100 - r.p) / 100 + 0.15) }))
-    .sort((x, y) => y.score - x.score).slice(0, 6);
-
-  return (
-    <>
-      <div className="wrap">
-        <div className="phead" style={{ paddingTop: 30 }}>
-          <div>
-            <h1>Study planner</h1>
-            <div className="sub">What to work on next, ranked by how much each topic is worth on the exam against how well you are doing on it.</div>
-          </div>
-        </div>
-        {["micro", "macro"].map((sub) => {
-          const list = plan(sub);
-          return (
-            <div key={sub} style={{ marginBottom: 34, "--accent": sub === "micro" ? "var(--micro)" : "var(--macro)" }}>
-              <div className="ugtitle"><h3>AP {SNAME[sub]}</h3></div>
-              {list.length === 0
-                ? <div className="empty" style={{ padding: 26 }}>No questions in this course yet.</div>
-                : <div className="btable">
-                  {list.map((r, i) => (
-                    <button className="brow" key={r.code} style={{ gridTemplateColumns: "26px 1fr 150px 74px" }}
-                      onClick={() => go({ v: "practice", subject: sub, unit: 0, pool: shuffle(bank.questions.filter((q) => q.subject === sub && q.topic === r.code)) })}>
-                      <span className="num" style={{ color: "var(--tx3)", fontSize: 12.5 }}>{i + 1}</span>
-                      <span className="tp"><span className="tc">{r.code}</span><span className="tt">{r.title}</span></span>
-                      <span className="hint">{r.p === null ? "not started" : `${r.p}% so far`} · unit worth {r.weight}%</span>
-                      <span className="acc2" style={{ color: "var(--accent)" }}>{r.have} q</span>
-                    </button>
-                  ))}
-                </div>}
-            </div>
-          );
-        })}
-        <div style={{ height: 50 }} />
-      </div>
-    </>
-  );
-}
-
-/* ---------------------------- full-length test picker ---------------------------- */
-
-function Tests({ bank, nav }) {
-  const { go } = nav;
-  const startTest = (subject) => {
-    const p = buildMock(bank.questions, subject);
-    if (p.length >= 5) go({ v: "mock", subject, pool: p });
-  };
-  return (
-    <>
-      <div className="wrap">
-        <div className="phead" style={{ paddingTop: 30 }}>
-          <div>
-            <h1>Full-length test</h1>
-            <div className="sub">A timed multiple-choice paper drawn in College Board unit proportions, then a score report with a predicted 1 to 5.</div>
-          </div>
-        </div>
-        {["micro", "macro"].map((sub) => {
-          const n = Math.min(60, bank.questions.filter((q) => q.subject === sub).length);
-          return (
-            <div className="mockcard" key={sub} style={{ "--accent": sub === "micro" ? "var(--micro)" : "var(--macro)" }}>
-              <div>
-                <span className="mk">AP {SSHORT[sub]}</span>
-                <h3>{SNAME[sub]}</h3>
-                <p>Weighted across all six units, roughly a quarter easy, half medium, a quarter hard.</p>
-                <div className="ml">
-                  <div><b className="num">{n}</b><span>questions</span></div>
-                  <div><b className="num">{Math.round(Math.min(4200, n * 70) / 60)}</b><span>minutes</span></div>
-                  <div><b className="num">70s</b><span>per question</span></div>
-                </div>
-              </div>
-              <button className="btn" onClick={() => startTest(sub)} disabled={n < 5}>
-                {n < 5 ? "Needs at least 5 questions" : "Start the test"}
-              </button>
-            </div>
-          );
-        })}
-        <div style={{ height: 50 }} />
-      </div>
-    </>
-  );
-}
-
-/* ---------------------------- results ---------------------------- */
-
-function Results({ subject, unit, items, secs, nav }) {
-  const { go } = nav;
-  const correct = items.filter((i) => i.correct).length;
-  const p = pct(correct, items.length) ?? 0;
-  const verdict = p >= 85 ? "Strong. Move to a heavier unit." : p >= 60 ? "Close. Redo the ones you missed today, not next week." : "Read every explanation below before trying this unit again.";
-  return (
-    <>
-      
-      <div className="wrap">
-        <div className="crumb">
-          <button onClick={() => go({ v: "home" })}>Equilibrium</button><span>/</span>
-          <button onClick={() => go({ v: "course", subject })}>AP {SNAME[subject]}</button><span>/</span>
-          <span>{unit === 0 ? "Mixed set" : `Unit ${unit}`}</span>
-        </div>
-        <div className="score">
-          <div className="n">{p}%</div>
-          <div className="side"><b>{correct} of {items.length} correct</b>{mmss(secs)} total · {items.length ? Math.round(secs / items.length) : 0}s per question</div>
-          <div className="side" style={{ marginLeft: "auto", maxWidth: 250, color: "var(--tx2)" }}>{verdict}</div>
-        </div>
-        <div className="rev">
-          {items.map((it, i) => (
-            <details key={i} className="ritem">
-              <summary>
-                <span className="num" style={{ color: "var(--tx3)", fontSize: 13 }}>{String(i + 1).padStart(2, "0")}</span>
-                <span>{it.q.stem.length > 96 ? it.q.stem.slice(0, 96) + "…" : it.q.stem}</span>
-                <span className={"dot " + (it.correct ? "y" : "n")} />
-              </summary>
-              <div className="rbody">
-                <div className="ln"><b>Correct:</b> {L[it.q.answer]}. {it.q.choices[it.q.answer]}</div>
-                {!it.correct && <div className="ln"><b>You chose:</b> {L[it.picked]}. {it.q.choices[it.picked]}</div>}
-                <div className="ln" style={{ marginTop: 12 }}>{it.q.explanation}</div>
-              </div>
-            </details>
-          ))}
-        </div>
-        <div className="actions" style={{ paddingBottom: 50 }}>
-          <button className="btn acc" onClick={() => go({ v: "course", subject })}>Back to units</button>
-          <button className="btn ghost" onClick={() => go({ v: "tutor" })}>Ask the tutor about a question</button>
-        </div>
-      </div>
+      )}
     </>
   );
 }

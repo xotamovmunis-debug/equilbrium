@@ -689,8 +689,8 @@ const CSS = `
 .eq .qmx{background:none;border:0;color:var(--tx3);width:32px;height:32px;border-radius:8px;
   display:flex;align-items:center;justify-content:center;}
 .eq .qmx:hover{background:var(--surf2);color:var(--tx);}
-.eq .qmlegend{display:flex;flex-wrap:wrap;gap:10px 18px;padding:14px 22px;font-size:12.5px;color:var(--tx2);}
-.eq .qmlegend span{display:inline-flex;align-items:center;gap:7px;}
+.eq .qmlegend{display:flex;flex-wrap:wrap;gap:12px 20px;padding:16px 22px 12px;font-size:13.5px;color:var(--tx);font-weight:500;}
+.eq .qmlegend span{display:inline-flex;align-items:center;gap:8px;}
 .eq .lg{width:12px;height:12px;border-radius:4px;display:inline-block;}
 .eq .lg.ok{background:var(--qok);} .eq .lg.no{background:var(--qno);}
 .eq .lg.pend{background:var(--qpend);} .eq .lg.rev{background:var(--micro);border-radius:2px;}
@@ -703,10 +703,10 @@ const CSS = `
 .eq .qmcell.no{background:var(--qno);color:var(--qnotx);}
 .eq .qmcell.pend{background:var(--qpend);color:var(--qpendtx);}
 .eq .qmcell.now{border-color:var(--tx);box-shadow:0 0 0 2px var(--bg2),0 0 0 3.5px var(--tx);}
-.eq .qmbadge{position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;
-  background:var(--micro);color:#fff;display:flex;align-items:center;justify-content:center;
-  box-shadow:0 0 0 2px var(--bg2);}
+.eq .qmbadge{position:absolute;top:-7px;right:-7px;display:flex;border-radius:50%;
+  background:var(--bg2);padding:1.5px;line-height:0;}
 .eq .gcell.ok{background:var(--okbg);border-color:var(--ok);color:var(--ok);}
+.eq .qmgrid{padding-top:10px;}
 .eq .gcell.no{background:var(--nobg);border-color:var(--no);color:var(--no);}
 @media (max-width:640px){ .eq .pkeys{display:none;} .eq .pfin{padding:10px 14px;gap:8px;} }
 .eq .notepad{border:1px solid var(--line);border-radius:12px;background:var(--surf);padding:14px;margin-bottom:22px;}
@@ -1832,6 +1832,26 @@ function Highlightable({ text, marks, onAdd, onRemove }) {
 }
 
 
+/* Small round status marks used by the question map legend and tiles. */
+function StatusIcon({ kind, size = 18 }) {
+  const bg = { ok: "var(--ok)", no: "var(--no)", pend: "var(--micro)", rev: "var(--micro)" }[kind];
+  return (
+    <svg width={size} height={size} viewBox="0 0 18 18" aria-hidden="true" style={{ flex: "0 0 auto" }}>
+      {kind === "pend" ? (
+        <><circle cx="9" cy="9" r="8" fill={bg} /><circle cx="9" cy="9" r="3.6" fill="var(--bg2)" /></>
+      ) : kind === "rev" ? (
+        <path d="M4.5 2h9v14L9 12.6 4.5 16z" fill={bg} />
+      ) : (
+        <><circle cx="9" cy="9" r="8" fill={bg} />
+          {kind === "ok"
+            ? <path d="M5.2 9.3 7.8 11.8 12.9 6.4" fill="none" stroke="#fff" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
+            : <path d="M6.2 6.2l5.6 5.6M11.8 6.2 6.2 11.8" fill="none" stroke="#fff" strokeWidth="1.9" strokeLinecap="round" />}
+        </>
+      )}
+    </svg>
+  );
+}
+
 function Timer({ seconds, paused, onToggle }) {
   const [hidden, setHidden] = useState(false);
   return (
@@ -2208,10 +2228,10 @@ function Practice({ subject, unit, pool, go, onFinish, nav }) {
               </button>
             </div>
             <div className="qmlegend">
-              <span><i className="lg ok" />Correct</span>
-              <span><i className="lg no" />Incorrect</span>
-              <span><i className="lg pend" />Answered, not checked</span>
-              <span><i className="lg rev" />For review</span>
+              <span><StatusIcon kind="ok" />Correct</span>
+              <span><StatusIcon kind="no" />Incorrect</span>
+              <span><StatusIcon kind="pend" />Answered, not checked</span>
+              <span><StatusIcon kind="rev" />For review</span>
             </div>
             <div className="qmgrid">
               {pool.map((x, i) => {
@@ -2222,11 +2242,9 @@ function Practice({ subject, unit, pool, go, onFinish, nav }) {
                   <button key={x.id} className={"qmcell " + st + (i === idx ? " now" : "")}
                     onClick={() => { setIdx(i); setGrid(false); }} aria-label={`Question ${i + 1}`}>
                     {i + 1}
-                    {savedIds.includes(x.id) && (
-                      <span className="qmbadge" aria-hidden="true">
-                        <svg width="8" height="10" viewBox="0 0 8 10" fill="currentColor"><path d="M0 0h8v10L4 7.4 0 10z" /></svg>
-                      </span>
-                    )}
+                    {savedIds.includes(x.id)
+                      ? <span className="qmbadge"><StatusIcon kind="rev" size={16} /></span>
+                      : st && <span className="qmbadge"><StatusIcon kind={st} size={16} /></span>}
                   </button>
                 );
               })}
@@ -2235,6 +2253,242 @@ function Practice({ subject, unit, pool, go, onFinish, nav }) {
         </div>
       )}
     </>
+  );
+}
+
+/* ---------------------------- results ---------------------------- */
+
+function Results({ subject, unit, items, secs, nav }) {
+  const { go } = nav;
+  const correct = items.filter((i) => i.correct).length;
+  const p = pct(correct, items.length) ?? 0;
+  const verdict = p >= 85 ? "Strong. Move to a heavier unit." : p >= 60 ? "Close. Redo the ones you missed today, not next week." : "Read every explanation below before trying this unit again.";
+  return (
+    <div className="wrap">
+      <div className="crumb">
+        <button onClick={() => go({ v: "bank", subject })}>Question bank</button><span>/</span>
+        <span>{unit === 0 ? "Practice set" : `Unit ${unit}`}</span>
+      </div>
+      <div className="score">
+        <div className="n">{p}%</div>
+        <div className="side"><b>{correct} of {items.length} correct</b>{mmss(secs)} total · {items.length ? Math.round(secs / items.length) : 0}s per question</div>
+        <div className="side" style={{ marginLeft: "auto", maxWidth: 260, color: "var(--tx2)" }}>{verdict}</div>
+      </div>
+      <div className="rev">
+        {items.map((it, i) => (
+          <details key={i} className="ritem">
+            <summary>
+              <span className="num" style={{ color: "var(--tx3)", fontSize: 13 }}>{String(i + 1).padStart(2, "0")}</span>
+              <span>{it.q.stem.length > 96 ? it.q.stem.slice(0, 96) + "…" : it.q.stem}</span>
+              <span className={"dot " + (it.correct ? "y" : "n")} />
+            </summary>
+            <div className="rbody">
+              <div className="ln"><b>Correct:</b> {L[it.q.answer]}. {it.q.choices[it.q.answer]}</div>
+              {!it.correct && <div className="ln"><b>You chose:</b> {L[it.picked]}. {it.q.choices[it.picked]}</div>}
+              <div className="ln" style={{ marginTop: 12 }}>{it.q.explanation}</div>
+            </div>
+          </details>
+        ))}
+      </div>
+      <div className="actions" style={{ paddingBottom: 50 }}>
+        <button className="btn acc" onClick={() => go({ v: "bank", subject })}>Back to the question bank</button>
+        <button className="btn ghost" onClick={() => go({ v: "tutor" })}>Ask the tutor about a question</button>
+      </div>
+    </div>
+  );
+}
+
+/* ---------------------------- saved and mistakes ---------------------------- */
+
+function Saved({ bank, me, nav }) {
+  const { go } = nav;
+  const [savedIds] = useLocal("equilibrium:saved", []);
+  const [notes] = useLocal("equilibrium:notes", {});
+  const [tab, setTab] = useState("saved");
+  const missed = me.missed || [];
+  const list = tab === "saved"
+    ? bank.questions.filter((q) => savedIds.includes(q.id))
+    : bank.questions.filter((q) => missed.includes(q.id));
+  const start = () => { if (list.length) go({ v: "practice", subject: list[0].subject, unit: 0, pool: shuffle(list) }); };
+
+  return (
+    <div className="wrap">
+      <div className="phead" style={{ paddingTop: 30 }}>
+        <div>
+          <h1>Saved and mistakes</h1>
+          <div className="sub">Questions you marked for review, and every question you have got wrong and not yet fixed.</div>
+        </div>
+      </div>
+      <div className="filters">
+        <button className={"fbtn" + (tab === "saved" ? " on" : "")} onClick={() => setTab("saved")}>Marked for review ({savedIds.length})</button>
+        <button className={"fbtn" + (tab === "missed" ? " on" : "")} onClick={() => setTab("missed")}>Still getting wrong ({missed.length})</button>
+      </div>
+      {list.length === 0 ? (
+        <div className="empty">
+          <h3>Nothing here yet</h3>
+          {tab === "saved" ? "Use the bookmark on any question to keep it for later." : "Questions you answer incorrectly land here, and leave once you get them right."}
+        </div>
+      ) : (
+        <>
+          <div className="actions" style={{ marginTop: 0, marginBottom: 20 }}>
+            <button className="btn acc" onClick={start}>Practise these {list.length}</button>
+          </div>
+          <div className="qlist">
+            {list.map((q) => (
+              <div key={q.id} className="qitem">
+                <span className="pill">{q.topic || (q.subject === "micro" ? "MI" : "MA") + "·" + q.unit}</span>
+                <span>
+                  {q.stem.length > 96 ? q.stem.slice(0, 96) + "…" : q.stem}
+                  {notes[q.id] && <span className="hint" style={{ display: "block", marginTop: 4 }}>Note: {notes[q.id]}</span>}
+                </span>
+                <span className="st">{SSHORT[q.subject]}</span>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+      <div style={{ height: 50 }} />
+    </div>
+  );
+}
+
+/* ---------------------------- analytics ---------------------------- */
+
+function Analytics({ me }) {
+  const rows = (subject) => UNITS[subject].flatMap((u) =>
+    (TOPICS[subject][u.n] || []).map(([code, title]) => {
+      const st = (me.topic || {})[`${subject}-${code}`];
+      return { code, title, a: st?.a || 0, p: st ? pct(st.c, st.a) : null };
+    })).filter((r) => r.a > 0);
+  const overall = (subject) => {
+    let a = 0, c = 0;
+    Object.entries(me.unit || {}).forEach(([k, v]) => { if (k.startsWith(subject + "-")) { a += v.a; c += v.c; } });
+    return { a, p: pct(c, a) };
+  };
+
+  return (
+    <div className="wrap">
+      <div className="phead" style={{ paddingTop: 30 }}>
+        <div>
+          <h1>Analytics</h1>
+          <div className="sub">Your accuracy on every topic you have practised, weakest first.</div>
+        </div>
+      </div>
+      {["micro", "macro"].map((sub) => {
+        const list = rows(sub).sort((x, y) => x.p - y.p);
+        const o = overall(sub);
+        return (
+          <div key={sub} style={{ marginBottom: 34, "--accent": sub === "micro" ? "var(--micro)" : "var(--macro)" }}>
+            <div className="ugtitle">
+              <h3>AP {SNAME[sub]}</h3>
+              <span className="num">{o.a ? `${o.p}% across ${o.a} questions` : "nothing yet"}</span>
+            </div>
+            {list.length === 0
+              ? <div className="empty" style={{ padding: 26 }}>Practise a topic and it will show up here.</div>
+              : <div className="btable">
+                {list.map((r) => (
+                  <div className="brow" key={r.code} style={{ gridTemplateColumns: "1fr 150px 74px" }}>
+                    <span className="tp"><span className="tc">{r.code}</span><span className="tt">{r.title}</span></span>
+                    <span className="prog"><span className="bar"><i style={{ width: `${r.p}%` }} /></span><span className="n">{r.a}</span></span>
+                    <span className="acc2">
+                      <span className="pip" style={{ background: r.p >= 80 ? "var(--ok)" : r.p >= 55 ? "var(--micro)" : "var(--no)" }} />{r.p}%
+                    </span>
+                  </div>
+                ))}
+              </div>}
+          </div>
+        );
+      })}
+      <div style={{ height: 50 }} />
+    </div>
+  );
+}
+
+/* ---------------------------- study planner ---------------------------- */
+
+function Planner({ bank, me, nav }) {
+  const { go } = nav;
+  /* Rank by what the exam rewards: heavy units you are weak or untested on. */
+  const plan = (subject) => UNITS[subject].flatMap((u) =>
+    (TOPICS[subject][u.n] || []).map(([code, title]) => {
+      const st = (me.topic || {})[`${subject}-${code}`];
+      const have = bank.questions.filter((q) => q.subject === subject && q.topic === code).length;
+      const p = st ? pct(st.c, st.a) : null;
+      return { code, title, weight: u.weight, have, p, score: u.weight * (p === null ? 1 : (100 - p) / 100 + 0.15) };
+    })).filter((r) => r.have > 0).sort((x, y) => y.score - x.score).slice(0, 6);
+
+  return (
+    <div className="wrap">
+      <div className="phead" style={{ paddingTop: 30 }}>
+        <div>
+          <h1>Study planner</h1>
+          <div className="sub">What to work on next, ranked by how much each topic is worth on the exam against how you are doing on it.</div>
+        </div>
+      </div>
+      {["micro", "macro"].map((sub) => {
+        const list = plan(sub);
+        return (
+          <div key={sub} style={{ marginBottom: 34, "--accent": sub === "micro" ? "var(--micro)" : "var(--macro)" }}>
+            <div className="ugtitle"><h3>AP {SNAME[sub]}</h3></div>
+            {list.length === 0
+              ? <div className="empty" style={{ padding: 26 }}>No questions in this course yet.</div>
+              : <div className="btable">
+                {list.map((r, i) => (
+                  <button className="brow" key={r.code} style={{ gridTemplateColumns: "26px 1fr 190px 60px" }}
+                    onClick={() => go({ v: "practice", subject: sub, unit: 0, pool: shuffle(bank.questions.filter((q) => q.subject === sub && q.topic === r.code)) })}>
+                    <span className="num" style={{ color: "var(--tx3)", fontSize: 12.5 }}>{i + 1}</span>
+                    <span className="tp"><span className="tc">{r.code}</span><span className="tt">{r.title}</span></span>
+                    <span className="hint">{r.p === null ? "not started" : `${r.p}% so far`} · unit worth {r.weight}%</span>
+                    <span className="acc2" style={{ color: "var(--accent)" }}>{r.have} q</span>
+                  </button>
+                ))}
+              </div>}
+          </div>
+        );
+      })}
+      <div style={{ height: 50 }} />
+    </div>
+  );
+}
+
+/* ---------------------------- full-length test picker ---------------------------- */
+
+function Tests({ bank, nav }) {
+  const { go } = nav;
+  const startTest = (subject) => {
+    const p = buildMock(bank.questions, subject);
+    if (p.length >= 5) go({ v: "mock", subject, pool: p });
+  };
+  return (
+    <div className="wrap">
+      <div className="phead" style={{ paddingTop: 30 }}>
+        <div>
+          <h1>Full-length test</h1>
+          <div className="sub">A timed multiple-choice paper drawn in College Board unit proportions, then a score report with a predicted 1 to 5.</div>
+        </div>
+      </div>
+      {["micro", "macro"].map((sub) => {
+        const n = Math.min(60, bank.questions.filter((q) => q.subject === sub).length);
+        return (
+          <div className="mockcard" key={sub} style={{ "--accent": sub === "micro" ? "var(--micro)" : "var(--macro)" }}>
+            <div>
+              <span className="mk">AP {SSHORT[sub]}</span>
+              <h3>{SNAME[sub]}</h3>
+              <p>Weighted across all six units, roughly a quarter easy, half medium, a quarter hard.</p>
+              <div className="ml">
+                <div><b className="num">{n}</b><span>questions</span></div>
+                <div><b className="num">{Math.round(Math.min(4200, n * 70) / 60)}</b><span>minutes</span></div>
+                <div><b className="num">70s</b><span>per question</span></div>
+              </div>
+            </div>
+            <button className="btn" onClick={() => startTest(sub)} disabled={n < 5}>
+              {n < 5 ? "Needs at least 5 questions" : "Start the test"}
+            </button>
+          </div>
+        );
+      })}
+      <div style={{ height: 50 }} />
+    </div>
   );
 }
 

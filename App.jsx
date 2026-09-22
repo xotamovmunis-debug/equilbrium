@@ -705,6 +705,38 @@ const CSS = `
 .eq .qmcell.now{border-color:var(--tx);box-shadow:0 0 0 2px var(--bg2),0 0 0 3.5px var(--tx);}
 .eq .qmbadge{position:absolute;top:-7px;right:-7px;display:flex;border-radius:50%;
   background:var(--bg2);padding:1.5px;line-height:0;}
+.eq .btn.submit{padding:11px 26px;font-size:15px;font-weight:700;border:0;border-radius:11px;color:#0A0F18;
+  background:linear-gradient(96deg,var(--micro),var(--macro));
+  box-shadow:0 10px 26px -12px color-mix(in srgb,var(--macro) 80%,transparent);letter-spacing:.01em;}
+.eq .btn.submit:hover{filter:brightness(1.08);transform:translateY(-1px);}
+.eq .rv{border:1px solid var(--line);border-radius:14px;overflow:hidden;margin:18px 0 40px;}
+.eq .rvi{border-bottom:1px solid var(--line);background:var(--bg2);}
+.eq .rvi:last-child{border-bottom:0;}
+.eq .rvi summary{list-style:none;cursor:pointer;display:grid;grid-template-columns:34px 1fr 24px;gap:14px;
+  padding:16px 18px;align-items:start;font-size:15px;line-height:1.55;}
+.eq .rvi summary::-webkit-details-marker{display:none;}
+.eq .rvi summary:hover{background:var(--surf2);}
+.eq .rvi[open] summary{background:var(--surf2);border-bottom:1px solid var(--line);}
+.eq .rvn{color:var(--tx3);font-size:13px;padding-top:2px;}
+.eq .rvst{padding-top:2px;display:flex;justify-content:flex-end;}
+.eq .rvblank{width:16px;height:16px;border-radius:50%;border:2px solid var(--tx3);display:inline-block;flex:0 0 auto;}
+.eq .rvbody{padding:18px 18px 22px 66px;}
+.eq .rvopt{display:grid;grid-template-columns:28px 1fr auto;gap:12px;align-items:center;padding:11px 14px;
+  border:1.5px solid var(--line);border-radius:10px;margin-bottom:8px;font-size:14.5px;background:var(--bg2);}
+.eq .rvopt.good{border-color:var(--ok);background:var(--okbg);}
+.eq .rvopt.bad{border-color:var(--no);background:var(--nobg);}
+.eq .rvc{width:26px;height:26px;border-radius:50%;border:1.5px solid var(--line2);display:flex;align-items:center;
+  justify-content:center;font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600;color:var(--tx2);}
+.eq .rvopt.good .rvc{background:var(--ok);border-color:var(--ok);color:#fff;}
+.eq .rvopt.bad .rvc{background:var(--no);border-color:var(--no);color:#fff;}
+.eq .rvtag{font-size:11.5px;font-weight:600;white-space:nowrap;}
+.eq .rvopt.good .rvtag{color:var(--ok);} .eq .rvopt.bad .rvtag{color:var(--no);}
+.eq .rvexp{margin-top:14px;padding-top:14px;border-top:1px solid var(--line);color:var(--tx2);font-size:15px;line-height:1.68;}
+.eq .qopen{width:100%;text-align:left;border-left:0;border-right:0;border-top:0;cursor:pointer;color:inherit;}
+.eq .qopen:hover{background:var(--surf2);}
+.eq .qopen .st{color:var(--accent);}
+.eq .clamp2{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+@media (max-width:640px){ .eq .rvbody{padding-left:18px;} .eq .btn.submit{padding:10px 18px;} }
 .eq .gcell.ok{background:var(--okbg);border-color:var(--ok);color:var(--ok);}
 .eq .qmgrid{padding-top:10px;}
 .eq .gcell.no{background:var(--nobg);border-color:var(--no);color:var(--no);}
@@ -2209,7 +2241,6 @@ function Practice({ subject, unit, pool, go, onFinish, nav }) {
             <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.8"
               strokeLinecap="round" strokeLinejoin="round"><path d="M2.5 4.5 6 8l3.5-3.5" /></svg>
           </button>
-          <span className="hint pkeys">A–E to choose · Enter to check</span>
           <span style={{ flex: 1 }} />
           <button className="btn ghost sm" onClick={prev} disabled={idx === 0}>Previous</button>
           <button className="btn sm" onClick={check} disabled={picked === null || revealed}>Check</button>
@@ -2256,6 +2287,51 @@ function Practice({ subject, unit, pool, go, onFinish, nav }) {
   );
 }
 
+/* ---------------------------- question review ----------------------------
+   Every question in full: stem, figure, all choices marked, explanation.
+--------------------------------------------------------------------------- */
+
+function ReviewList({ items }) {
+  return (
+    <div className="rv">
+      {items.map((it, i) => {
+        const blank = it.picked === null || it.picked === undefined;
+        return (
+          <details key={i} className="rvi">
+            <summary>
+              <span className="rvn num">{i + 1}</span>
+              <span className="rvs">{it.q.stem}</span>
+              <span className="rvst">
+                {blank ? <span className="rvblank" title="Left blank" /> : <StatusIcon kind={it.correct ? "ok" : "no"} />}
+              </span>
+            </summary>
+            <div className="rvbody">
+              {it.q.image && (
+                <a className="qfig" href={it.q.image} target="_blank" rel="noreferrer">
+                  <img src={it.q.image} alt="Figure for this question" loading="lazy" />
+                </a>
+              )}
+              {it.q.choices.map((c, j) => {
+                const good = j === it.q.answer, bad = !good && j === it.picked;
+                return (
+                  <div key={j} className={"rvopt" + (good ? " good" : bad ? " bad" : "")}>
+                    <span className="rvc">{L[j]}</span>
+                    <span>{c}</span>
+                    {good && <span className="rvtag">Correct answer</span>}
+                    {bad && <span className="rvtag">Your answer</span>}
+                  </div>
+                );
+              })}
+              {blank && <div className="hint" style={{ margin: "4px 0 10px" }}>You left this question blank.</div>}
+              <div className="rvexp">{it.q.explanation}</div>
+            </div>
+          </details>
+        );
+      })}
+    </div>
+  );
+}
+
 /* ---------------------------- results ---------------------------- */
 
 function Results({ subject, unit, items, secs, nav }) {
@@ -2274,22 +2350,7 @@ function Results({ subject, unit, items, secs, nav }) {
         <div className="side"><b>{correct} of {items.length} correct</b>{mmss(secs)} total · {items.length ? Math.round(secs / items.length) : 0}s per question</div>
         <div className="side" style={{ marginLeft: "auto", maxWidth: 260, color: "var(--tx2)" }}>{verdict}</div>
       </div>
-      <div className="rev">
-        {items.map((it, i) => (
-          <details key={i} className="ritem">
-            <summary>
-              <span className="num" style={{ color: "var(--tx3)", fontSize: 13 }}>{String(i + 1).padStart(2, "0")}</span>
-              <span>{it.q.stem.length > 96 ? it.q.stem.slice(0, 96) + "…" : it.q.stem}</span>
-              <span className={"dot " + (it.correct ? "y" : "n")} />
-            </summary>
-            <div className="rbody">
-              <div className="ln"><b>Correct:</b> {L[it.q.answer]}. {it.q.choices[it.q.answer]}</div>
-              {!it.correct && <div className="ln"><b>You chose:</b> {L[it.picked]}. {it.q.choices[it.picked]}</div>}
-              <div className="ln" style={{ marginTop: 12 }}>{it.q.explanation}</div>
-            </div>
-          </details>
-        ))}
-      </div>
+      <ReviewList items={items} />
       <div className="actions" style={{ paddingBottom: 50 }}>
         <button className="btn acc" onClick={() => go({ v: "bank", subject })}>Back to the question bank</button>
         <button className="btn ghost" onClick={() => go({ v: "tutor" })}>Ask the tutor about a question</button>
@@ -2316,7 +2377,7 @@ function Saved({ bank, me, nav }) {
       <div className="phead" style={{ paddingTop: 30 }}>
         <div>
           <h1>Saved and mistakes</h1>
-          <div className="sub">Questions you marked for review, and every question you have got wrong and not yet fixed.</div>
+          <div className="sub">Questions you marked for review, and every question you have got wrong and not yet fixed. Open any one on its own, or practise the whole list.</div>
         </div>
       </div>
       <div className="filters">
@@ -2335,14 +2396,15 @@ function Saved({ bank, me, nav }) {
           </div>
           <div className="qlist">
             {list.map((q) => (
-              <div key={q.id} className="qitem">
+              <button key={q.id} className="qitem qopen"
+                onClick={() => go({ v: "practice", subject: q.subject, unit: 0, pool: [q] })}>
                 <span className="pill">{q.topic || (q.subject === "micro" ? "MI" : "MA") + "·" + q.unit}</span>
                 <span>
-                  {q.stem.length > 96 ? q.stem.slice(0, 96) + "…" : q.stem}
+                  <span className="clamp2">{q.stem}</span>
                   {notes[q.id] && <span className="hint" style={{ display: "block", marginTop: 4 }}>Note: {notes[q.id]}</span>}
                 </span>
-                <span className="st">{SSHORT[q.subject]}</span>
-              </div>
+                <span className="st">{SSHORT[q.subject]} · Open</span>
+              </button>
             ))}
           </div>
         </>
@@ -2504,6 +2566,7 @@ function Mock({ subject, pool, go, onFinish, nav }) {
   const doneRef = useRef(false);
   const q = pool[idx];
   const answered = Object.keys(ans).length;
+  const last = idx + 1 >= pool.length;
 
   const finish = useCallback(() => {
     if (doneRef.current) return;
@@ -2519,81 +2582,98 @@ function Mock({ subject, pool, go, onFinish, nav }) {
     return () => clearInterval(t);
   }, [finish]);
 
+  const next = useCallback(() => setIdx((i) => Math.min(pool.length - 1, i + 1)), [pool.length]);
+  const prev = useCallback(() => setIdx((i) => Math.max(0, i - 1)), []);
+
   useEffect(() => {
     const h = (e) => {
       if (grid || confirm) return;
       if (e.target && ["TEXTAREA", "INPUT"].includes(e.target.tagName)) return;
       const li = L.indexOf(e.key.toUpperCase());
       const ni = ["1", "2", "3", "4", "5", "6"].indexOf(e.key);
-      const pick = li >= 0 && li < q.choices.length ? li : ni >= 0 && ni < q.choices.length ? ni : -1;
-      if (pick >= 0) { e.preventDefault(); return setAns((p) => ({ ...p, [q.id]: pick })); }
-      if (e.key === "ArrowRight" || e.key === "Enter") { e.preventDefault(); setIdx((i) => Math.min(pool.length - 1, i + 1)); }
-      if (e.key === "ArrowLeft") { e.preventDefault(); setIdx((i) => Math.max(0, i - 1)); }
+      const k = li >= 0 && li < q.choices.length ? li : ni >= 0 && ni < q.choices.length ? ni : -1;
+      if (k >= 0) { e.preventDefault(); return setAns((p) => ({ ...p, [q.id]: k })); }
+      if (e.key === "ArrowRight" || e.key === "Enter") { e.preventDefault(); next(); }
+      if (e.key === "ArrowLeft") { e.preventDefault(); prev(); }
     };
     window.addEventListener("keydown", h);
     return () => window.removeEventListener("keydown", h);
-  }, [q, pool.length, grid, confirm]);
+  }, [q, grid, confirm, next, prev]);
 
   return (
     <>
-      <div className="wrap" style={{ maxWidth: 820 }}>
-        <div className="crumb" style={{ justifyContent: "space-between" }}>
-          <span>Full-length test · AP {SNAME[subject]}</span>
-          <span style={{ display: "flex", gap: 10, alignItems: "center" }}>
-            <button className="mini" onClick={() => setGrid(true)}>Review</button>
-            <button className="mini" onClick={() => setConfirm(true)}>Submit</button>
-          </span>
-        </div>
+      <div className="wrap" style={{ maxWidth: 860 }}>
+        <div className="crumb"><span>Full-length test · AP {SNAME[subject]}</span></div>
         <div className="timer">
           <div className={"digits" + (left < 300 ? " lowtime" : "")}>{mmss(left)}</div>
         </div>
-        <div className="segs" style={{ marginBottom: 22 }}>
-          {pool.map((x, i) => <div key={i} className={"seg " + (ans[x.id] !== undefined ? "seen" : i === idx ? "now" : "")}
-            style={ans[x.id] !== undefined ? { background: "var(--tx3)" } : undefined} />)}
-        </div>
-
         <QuestionView q={q} index={idx} total={pool.length} picked={ans[q.id] ?? null} revealed={false}
           onPick={(i) => setAns((p) => ({ ...p, [q.id]: i }))} saved={savedIds.includes(q.id)}
           onToggleSave={() => setSavedIds((p) => (p.includes(q.id) ? p.filter((x) => x !== q.id) : [...p, q.id]))} />
+        <div style={{ height: 96 }} />
+      </div>
 
-        <div className="qfoot">
-          <span className="hint">{answered} of {pool.length} answered · no feedback until you submit</span>
-          <span style={{ display: "flex", gap: 10 }}>
-            <button className="btn ghost" onClick={() => setIdx((i) => Math.max(0, i - 1))} disabled={idx === 0}>Back</button>
-            {idx + 1 < pool.length
-              ? <button className="btn" onClick={() => setIdx((i) => i + 1)}>Next</button>
-              : <button className="btn acc" onClick={() => setConfirm(true)}>Finish and score</button>}
-          </span>
+      <div className="pfoot">
+        <div className="pfin">
+          <button className="qcount" onClick={() => setGrid(true)} aria-label="Open the question map">
+            <span className="num">{idx + 1}</span> of <span className="num">{pool.length}</span>
+            <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.8"
+              strokeLinecap="round" strokeLinejoin="round"><path d="M2.5 4.5 6 8l3.5-3.5" /></svg>
+          </button>
+          <span style={{ flex: 1 }} />
+          <button className="btn ghost sm" onClick={prev} disabled={idx === 0}>Previous</button>
+          <button className="btn sm" onClick={next} disabled={last}>Next</button>
+          <button className="btn submit" onClick={() => setConfirm(true)}>
+            Submit
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2"
+              strokeLinecap="round" strokeLinejoin="round"><path d="M3 8.5 6.4 12 13 4.5" /></svg>
+          </button>
         </div>
       </div>
 
       {grid && (
         <div className="sheet" onClick={() => setGrid(false)}>
-          <div className="sheetin" onClick={(e) => e.stopPropagation()}>
-            <h2 style={{ fontSize: 21, marginBottom: 6 }}>Question map</h2>
-            <p className="hint" style={{ marginTop: 0, marginBottom: 18 }}>{answered} of {pool.length} answered. A dot marks a saved question.</p>
-            <div className="qgrid">
-              {pool.map((x, i) => (
-                <button key={x.id} className={"gcell" + (ans[x.id] !== undefined ? " done" : "") + (i === idx ? " now" : "") + (savedIds.includes(x.id) ? " fl" : "")}
-                  onClick={() => { setIdx(i); setGrid(false); }}>{i + 1}</button>
-              ))}
+          <div className="qmap" onClick={(e) => e.stopPropagation()}>
+            <div className="qmhead">
+              <h2>Question map</h2>
+              <button className="qmx" onClick={() => setGrid(false)} aria-label="Close">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.8"
+                  strokeLinecap="round"><path d="M2 2l10 10M12 2 2 12" /></svg>
+              </button>
             </div>
-            <div className="actions"><button className="btn ghost" onClick={() => setGrid(false)}>Close</button></div>
+            <div className="qmlegend">
+              <span><StatusIcon kind="pend" />Answered</span>
+              <span><span className="rvblank" />Not answered</span>
+              <span><StatusIcon kind="rev" />For review</span>
+              <span className="hint" style={{ fontWeight: 400 }}>{answered} of {pool.length} answered</span>
+            </div>
+            <div className="qmgrid">
+              {pool.map((x, i) => {
+                const done = ans[x.id] !== undefined;
+                return (
+                  <button key={x.id} className={"qmcell" + (done ? " pend" : "") + (i === idx ? " now" : "")}
+                    onClick={() => { setIdx(i); setGrid(false); }} aria-label={`Question ${i + 1}`}>
+                    {i + 1}
+                    {savedIds.includes(x.id) && <span className="qmbadge"><StatusIcon kind="rev" size={16} /></span>}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
       )}
 
       {confirm && (
         <div className="sheet" onClick={() => setConfirm(false)}>
-          <div className="sheetin" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 420 }}>
-            <h2 style={{ fontSize: 21, marginBottom: 10 }}>Submit the paper?</h2>
+          <div className="sheetin" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 440 }}>
+            <h2 style={{ fontSize: 22, marginBottom: 10 }}>Submit the test?</h2>
             <p style={{ color: "var(--tx2)", fontSize: 14.5, marginTop: 0 }}>
               {answered === pool.length
-                ? "Everything is answered. You will see your score and every explanation next."
+                ? "Every question is answered. You will see your score and every explanation next."
                 : `${pool.length - answered} question${pool.length - answered === 1 ? " is" : "s are"} still blank. Blanks are marked wrong, and there is no guessing penalty on the real exam.`}
             </p>
             <div className="actions">
-              <button className="btn acc" onClick={finish}>Submit</button>
+              <button className="btn submit" onClick={finish}>Submit</button>
               <button className="btn ghost" onClick={() => setConfirm(false)}>Keep working</button>
             </div>
           </div>
@@ -2658,21 +2738,6 @@ function MockResult({ subject, items, secs, bands, nav }) {
           </div>
         </div>
 
-        <div className="sechead">Where the bands sit</div>
-        <div className="bands" style={{ maxWidth: 620 }}>
-          {rows.map((r) => (
-            <div key={r.s} className={"bandrow" + (r.s === score ? " on" : "")}>
-              <span className="bs">{r.s}</span>
-              <span>{r.s === 5 ? "Extremely well qualified" : r.s === 4 ? "Well qualified" : r.s === 3 ? "Qualified" : r.s === 2 ? "Possibly qualified" : "No recommendation"}</span>
-              <span className="br">{r.lo}–{r.hi}</span>
-            </div>
-          ))}
-        </div>
-        <p className="hint" style={{ maxWidth: 620, marginTop: 12 }}>
-          College Board sets the raw-to-score conversion after each administration and does not publish it in advance, so these bands are estimates from released exams and recent score distributions. They can be adjusted in the console.
-          {next && ` You are ${next.lo - composite} composite point${next.lo - composite === 1 ? "" : "s"} from a ${next.s}.`}
-        </p>
-
         <div className="sechead">By unit</div>
         {unitRows.map((u) => (
           <div key={u.n} className="abar" style={{ maxWidth: 620 }}>
@@ -2683,25 +2748,10 @@ function MockResult({ subject, items, secs, bands, nav }) {
         ))}
 
         <div className="sechead">Every question</div>
-        <div className="rev">
-          {items.map((it, i) => (
-            <details key={i} className="ritem">
-              <summary>
-                <span className="num" style={{ color: "var(--tx3)", fontSize: 13 }}>{String(i + 1).padStart(2, "0")}</span>
-                <span>{it.q.stem.length > 92 ? it.q.stem.slice(0, 92) + "…" : it.q.stem}</span>
-                <span className={"dot " + (it.correct ? "y" : "n")} />
-              </summary>
-              <div className="rbody">
-                <div className="ln"><b>Correct:</b> {L[it.q.answer]}. {it.q.choices[it.q.answer]}</div>
-                <div className="ln"><b>You chose:</b> {it.picked === null ? "left blank" : `${L[it.picked]}. ${it.q.choices[it.picked]}`}</div>
-                <div className="ln" style={{ marginTop: 12 }}>{it.q.explanation}</div>
-              </div>
-            </details>
-          ))}
-        </div>
+        <ReviewList items={items} />
 
         <div className="actions" style={{ paddingBottom: 54 }}>
-          <button className="btn acc" onClick={() => go({ v: "course", subject })}>Back to the course</button>
+          <button className="btn acc" onClick={() => go({ v: "tests" })}>Back to full-length tests</button>
           <button className="btn ghost" onClick={() => go({ v: "tutor" })}>Ask the tutor about a question</button>
         </div>
       </div>

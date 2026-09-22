@@ -154,6 +154,8 @@ const CSS = `
   --pgrid:#1A2234; --paxis:#3A465F; --markbg:#0E1524; --markline:#293349;
   --navbg:rgba(7,10,18,.8); --glowA:rgba(47,192,205,.13); --glowB:rgba(240,169,58,.09);
   --shadow:0 30px 80px -30px rgba(0,0,0,.9);
+  --qok:rgba(53,209,138,.18); --qoktx:#5FE3A7; --qno:rgba(255,110,110,.18); --qnotx:#FF9A9A;
+  --qpend:rgba(240,169,58,.18); --qpendtx:#F5C46B;
   --accent:var(--macro);
   font-family:'Satoshi','Inter',system-ui,-apple-system,sans-serif;
   background:var(--bg); color:var(--tx); min-height:100vh;
@@ -170,6 +172,7 @@ const CSS = `
   --pgrid:#EBE0CE; --paxis:#B6A88F; --markbg:#FFFBF4; --markline:#DCCDB6;
   --navbg:rgba(244,236,222,.85); --glowA:rgba(10,122,135,.09); --glowB:rgba(168,99,10,.09);
   --shadow:0 18px 44px -22px rgba(80,60,30,.28);
+  --qok:#D8EFD3; --qoktx:#2F6B22; --qno:#F6D5D0; --qnotx:#A12A1E; --qpend:#F6E4C2; --qpendtx:#8A5608;
 }
 .eq::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
   background:radial-gradient(680px 420px at 78% -8%,var(--glowA),transparent 70%),
@@ -678,6 +681,31 @@ const CSS = `
 .eq .qcount{display:inline-flex;align-items:center;gap:8px;background:var(--tx);color:var(--bg);border:0;
   border-radius:10px;padding:9px 16px;font-weight:600;font-size:14px;}
 .eq .qcount:hover{filter:brightness(1.12);}
+.eq .qmap{background:var(--bg2);border:1px solid var(--line);border-radius:18px;width:100%;max-width:480px;
+  max-height:84vh;display:flex;flex-direction:column;box-shadow:var(--shadow);overflow:hidden;}
+.eq .qmhead{display:flex;justify-content:space-between;align-items:center;padding:20px 22px 14px;
+  border-bottom:1px solid var(--line);}
+.eq .qmhead h2{font-size:22px;}
+.eq .qmx{background:none;border:0;color:var(--tx3);width:32px;height:32px;border-radius:8px;
+  display:flex;align-items:center;justify-content:center;}
+.eq .qmx:hover{background:var(--surf2);color:var(--tx);}
+.eq .qmlegend{display:flex;flex-wrap:wrap;gap:10px 18px;padding:14px 22px;font-size:12.5px;color:var(--tx2);}
+.eq .qmlegend span{display:inline-flex;align-items:center;gap:7px;}
+.eq .lg{width:12px;height:12px;border-radius:4px;display:inline-block;}
+.eq .lg.ok{background:var(--qok);} .eq .lg.no{background:var(--qno);}
+.eq .lg.pend{background:var(--qpend);} .eq .lg.rev{background:var(--micro);border-radius:2px;}
+.eq .qmgrid{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;padding:6px 22px 22px;overflow-y:auto;}
+.eq .qmcell{position:relative;aspect-ratio:1.15;border-radius:12px;border:1.5px solid transparent;
+  background:var(--surf2);color:var(--tx2);font-family:'JetBrains Mono',monospace;font-weight:600;font-size:15px;
+  display:flex;align-items:center;justify-content:center;transition:transform .12s;}
+.eq .qmcell:hover{transform:translateY(-1px);}
+.eq .qmcell.ok{background:var(--qok);color:var(--qoktx);}
+.eq .qmcell.no{background:var(--qno);color:var(--qnotx);}
+.eq .qmcell.pend{background:var(--qpend);color:var(--qpendtx);}
+.eq .qmcell.now{border-color:var(--tx);box-shadow:0 0 0 2px var(--bg2),0 0 0 3.5px var(--tx);}
+.eq .qmbadge{position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;
+  background:var(--micro);color:#fff;display:flex;align-items:center;justify-content:center;
+  box-shadow:0 0 0 2px var(--bg2);}
 .eq .gcell.ok{background:var(--okbg);border-color:var(--ok);color:var(--ok);}
 .eq .gcell.no{background:var(--nobg);border-color:var(--no);color:var(--no);}
 @media (max-width:640px){ .eq .pkeys{display:none;} .eq .pfin{padding:10px 14px;gap:8px;} }
@@ -2171,19 +2199,37 @@ function Practice({ subject, unit, pool, go, onFinish, nav }) {
 
       {grid && (
         <div className="sheet" onClick={() => setGrid(false)}>
-          <div className="sheetin" onClick={(e) => e.stopPropagation()}>
-            <h2 style={{ fontSize: 21, marginBottom: 6 }}>Question map</h2>
-            <p className="hint" style={{ marginTop: 0, marginBottom: 14 }}>
-              {checkedCount} of {pool.length} checked. Green is right, red is wrong, a dot marks a saved question.
-            </p>
-            <div className="qgrid">
-              {pool.map((x, i) => (
-                <button key={x.id} className={cellClass(x, i)} onClick={() => { setIdx(i); setGrid(false); }}>{i + 1}</button>
-              ))}
+          <div className="qmap" onClick={(e) => e.stopPropagation()}>
+            <div className="qmhead">
+              <h2>Question map</h2>
+              <button className="qmx" onClick={() => setGrid(false)} aria-label="Close">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.8"
+                  strokeLinecap="round"><path d="M2 2l10 10M12 2 2 12" /></svg>
+              </button>
             </div>
-            <div className="actions">
-              <button className="btn ghost" onClick={() => setGrid(false)}>Close</button>
-              <button className="btn acc" onClick={finish} disabled={!checkedCount}>Finish and see results</button>
+            <div className="qmlegend">
+              <span><i className="lg ok" />Correct</span>
+              <span><i className="lg no" />Incorrect</span>
+              <span><i className="lg pend" />Answered, not checked</span>
+              <span><i className="lg rev" />For review</span>
+            </div>
+            <div className="qmgrid">
+              {pool.map((x, i) => {
+                const a = ans[x.id];
+                const st = a?.checked ? (a.picked === x.answer ? "ok" : "no")
+                  : a?.picked !== undefined && a?.picked !== null ? "pend" : "";
+                return (
+                  <button key={x.id} className={"qmcell " + st + (i === idx ? " now" : "")}
+                    onClick={() => { setIdx(i); setGrid(false); }} aria-label={`Question ${i + 1}`}>
+                    {i + 1}
+                    {savedIds.includes(x.id) && (
+                      <span className="qmbadge" aria-hidden="true">
+                        <svg width="8" height="10" viewBox="0 0 8 10" fill="currentColor"><path d="M0 0h8v10L4 7.4 0 10z" /></svg>
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
             </div>
           </div>
         </div>

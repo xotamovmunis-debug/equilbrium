@@ -675,6 +675,100 @@ const CSS = `
   display:flex;align-items:center;justify-content:center;}
 .eq .swatch.erase:hover{color:var(--no);border-color:var(--no);}
 .eq .qbody{position:relative;}
+
+/* ---- dashboard: countdown, goal, streak, resume ---- */
+.eq .greetrow{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;flex-wrap:wrap;}
+.eq .credchip{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--bg2);
+  color:var(--tx2);border-radius:999px;padding:8px 15px;font-size:13px;font-weight:500;white-space:nowrap;}
+.eq .credchip:hover{border-color:var(--line2);color:var(--tx);}
+.eq .credchip .dotc{width:7px;height:7px;border-radius:50%;background:var(--ok);}
+.eq .credchip.out .dotc{background:var(--no);}
+.eq .credchip.up{border-style:dashed;}
+.eq .todaygrid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:26px 0 8px;}
+.eq .tcard{position:relative;display:flex;flex-direction:column;gap:7px;align-items:flex-start;text-align:left;
+  background:var(--bg2);border:1px solid var(--line);border-radius:16px;padding:18px 20px;min-height:124px;}
+.eq .tlab{font-size:12px;letter-spacing:.07em;text-transform:uppercase;color:var(--tx3);}
+.eq .tbig{font-size:34px;line-height:1;font-weight:600;letter-spacing:-.02em;}
+.eq .tbig small{font-size:15px;font-weight:400;color:var(--tx3);margin-left:4px;}
+.eq .thint{font-size:12.5px;color:var(--tx3);}
+.eq .tbar{display:block;width:100%;height:6px;border-radius:99px;background:var(--surf2);overflow:hidden;margin-top:2px;}
+.eq .tbar i{display:block;height:100%;border-radius:99px;background:var(--accent);transition:width .4s;}
+.eq .tdate{margin-top:auto;background:none;border:0;color:var(--tx3);font-size:12.5px;font-family:inherit;padding:0;}
+.eq .tcard.go{cursor:pointer;border-color:var(--accent);}
+.eq .tcard.go:hover{transform:translateY(-2px);box-shadow:var(--shadow);}
+.eq .tgo{font-size:16px;font-weight:500;line-height:1.35;}
+.eq .tarrow{margin-top:auto;display:inline-flex;align-items:center;gap:7px;color:var(--accent);font-weight:600;font-size:13.5px;}
+
+/* ---- question bank, card style ---- */
+.eq .allcard.ready{border-color:var(--accent);}
+.eq .allact{display:flex;align-items:center;gap:14px;}
+.eq .pickbar{position:sticky;top:10px;z-index:20;display:flex;align-items:center;gap:12px;margin:18px 0 6px;
+  background:var(--bg2);border:1px solid var(--accent);border-radius:14px;padding:12px 18px;font-size:14px;
+  box-shadow:var(--shadow);}
+.eq .btable{display:flex;flex-direction:column;gap:8px;border:0;background:none;}
+.eq .bhead{display:none;}
+.eq .brow{display:grid;grid-template-columns:24px 1fr 170px 74px;align-items:center;gap:16px;
+  background:var(--bg2);border:1px solid var(--line);border-radius:13px;padding:15px 18px;width:100%;
+  text-align:left;transition:transform .14s,border-color .14s,box-shadow .14s;}
+.eq .brow:hover{transform:translateY(-1px);border-color:var(--line2);box-shadow:var(--shadow);}
+.eq .brow.none{opacity:.45;}
+.eq .brow .tc{display:inline-flex;align-items:center;justify-content:center;min-width:38px;height:24px;
+  border-radius:7px;background:color-mix(in srgb,var(--accent) 16%,transparent);color:var(--accent);
+  font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600;margin-right:12px;}
+.eq .brow .tt{font-size:15px;}
+.eq .ugtitle{display:flex;align-items:baseline;gap:14px;margin:30px 0 14px;flex-wrap:wrap;}
+
+/* ---- Equity button ---- */
+.eq .eqbtn{display:inline-flex;align-items:center;gap:10px;}
+.eq .eqleft{font-size:11.5px;font-weight:600;padding:3px 9px;border-radius:999px;
+  background:color-mix(in srgb,var(--accent) 18%,transparent);color:var(--accent);}
+.eq .eqleft.lock{background:var(--surf2);color:var(--tx3);}
+
+/* ---- pricing ---- */
+.eq .cycle{display:inline-flex;gap:4px;margin-top:22px;background:var(--surf2);border-radius:999px;padding:4px;}
+.eq .cycle button{border:0;background:none;color:var(--tx2);padding:9px 20px;border-radius:999px;font-size:14px;font-weight:500;}
+.eq .cycle button.on{background:var(--bg2);color:var(--tx);box-shadow:var(--shadow);}
+.eq .cycle .save{font-size:11px;color:var(--ok);margin-left:6px;}
+.eq .plans{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:34px;align-items:start;}
+.eq .plan{position:relative;background:var(--bg2);border:1px solid var(--line);border-radius:18px;padding:26px 24px;}
+.eq .plan.popular{border-color:var(--accent);box-shadow:var(--shadow);transform:translateY(-10px);padding-top:32px;}
+.eq .plan.current{outline:1px dashed var(--line2);outline-offset:4px;}
+.eq .ptag{position:absolute;top:-11px;left:24px;background:var(--accent);color:var(--onacc);font-size:11.5px;
+  font-weight:700;letter-spacing:.04em;padding:5px 12px;border-radius:999px;}
+.eq .plan h3{font-size:19px;margin-bottom:8px;}
+.eq .pprice{display:flex;align-items:baseline;gap:6px;margin-bottom:10px;}
+.eq .pprice b{font-size:40px;font-weight:600;letter-spacing:-.03em;}
+.eq .pprice span{color:var(--tx3);font-size:14px;}
+.eq .pblurb{color:var(--tx2);font-size:14px;line-height:1.55;margin-bottom:18px;min-height:44px;}
+.eq .plan .btn{width:100%;justify-content:center;}
+.eq .plist{list-style:none;margin-top:20px;padding-top:18px;border-top:1px solid var(--line);
+  display:flex;flex-direction:column;gap:11px;font-size:14px;}
+.eq .plist li{display:flex;gap:10px;align-items:flex-start;}
+.eq .plist li.off{color:var(--tx3);}
+.eq .pmark{color:var(--accent);font-weight:700;width:14px;flex:0 0 auto;}
+.eq .plist li.off .pmark{color:var(--tx3);}
+
+/* ---- phone ---- */
+@media (max-width:900px){
+  .eq .todaygrid{grid-template-columns:repeat(2,1fr);}
+  .eq .plans{grid-template-columns:1fr;gap:22px;}
+  .eq .plan.popular{transform:none;}
+}
+@media (max-width:640px){
+  .eq .todaygrid{grid-template-columns:1fr;gap:10px;margin-top:20px;}
+  .eq .tcard{min-height:0;padding:15px 17px;}
+  .eq .tbig{font-size:28px;}
+  .eq .greetrow{flex-direction:column;gap:12px;}
+  .eq .credchip{font-size:12.5px;padding:7px 13px;}
+  .eq .brow{grid-template-columns:22px 1fr auto;gap:11px;padding:13px 14px;row-gap:9px;}
+  .eq .brow .prog{grid-column:2 / -1;}
+  .eq .brow .tt{font-size:14.5px;}
+  .eq .pickbar{position:fixed;left:10px;right:10px;bottom:10px;top:auto;margin:0;}
+  .eq .allact{flex-direction:column;align-items:stretch;}
+  .eq .allcard .btn{width:100%;justify-content:center;}
+  .eq .cycle{width:100%;justify-content:center;}
+  .eq .eqbtn{width:100%;justify-content:space-between;}
+}
 .eq .pfoot{position:fixed;left:0;right:0;bottom:0;z-index:35;background:var(--navbg);backdrop-filter:blur(14px);
   border-top:1px solid var(--line);}
 .eq .pfin{max-width:860px;margin:0 auto;padding:12px 24px;display:flex;align-items:center;gap:10px;}
@@ -952,7 +1046,7 @@ function Prose({ text }) {
 
 /* Which rail entry lights up for the page being shown. */
 function shellKey(r) {
-  if (["planner", "analytics", "saved", "tutor"].includes(r.v)) return r.v;
+  if (["planner", "analytics", "saved", "tutor", "pricing"].includes(r.v)) return r.v;
   if (["tests", "mock", "mockresult"].includes(r.v)) return "test";
   if (r.subject) return `bank-${r.subject}`;
   return "home";
@@ -965,6 +1059,7 @@ function parseRoute() {
   if (p[0] === "reset") return { v: "reset" };
   if (p[0] === "signup") return { v: "signup" };
   if (p[0] === "tutor") return { v: "tutor" };
+  if (p[0] === "pricing") return { v: "pricing" };
   if (p[0] === "admin") return { v: "admin" };
   if (p[0] === "planner") return { v: "planner" };
   if (p[0] === "analytics") return { v: "analytics" };
@@ -995,6 +1090,7 @@ export default function App() {
         : r.v === "planner" ? "/planner" : r.v === "analytics" ? "/analytics"
           : r.v === "saved" ? "/saved" : r.v === "tests" ? "/tests"
         : r.v === "unit" ? `/${r.subject}/${r.unit}` : r.v === "tutor" ? "/tutor"
+          : r.v === "pricing" ? "/pricing"
           : r.v === "admin" ? "/admin" : null;
     /* Practice, mock and result screens carry state in memory, so they
        deliberately leave the URL on the page the student came from. */
@@ -1090,9 +1186,15 @@ export default function App() {
       topic[k] = { a: c.a + 1, c: c.c + (it.correct ? 1 : 0) };
     });
 
-    const nm = { ...me, unit, topic, answered: [...answered].slice(-4000), missed: [...missed].slice(-2000) };
+    /* One entry per day drives the streak and the daily goal on the dashboard. */
+    const days = { ...(me.days || {}) };
+    const dk = new Date().toISOString().slice(0, 10);
+    days[dk] = (days[dk] || 0) + s.items.length;
+    const recent = Object.fromEntries(Object.entries(days).sort().slice(-180));
+
+    const nm = { ...me, unit, topic, days: recent, answered: [...answered].slice(-4000), missed: [...missed].slice(-2000) };
     setMe(nm); saveMe(nm);
-    if (user) { try { await saveProgress(user.id, { unit, topic, answered: nm.answered, missed: nm.missed }); } catch { /* offline */ } }
+    if (user) { try { await saveProgress(user.id, { unit, topic, days: recent, answered: nm.answered, missed: nm.missed }); } catch { /* offline */ } }
   }, [me, user]);
 
   if (!ready || !authReady) return <div className="eq"><style>{CSS}</style><div className="wrap z" style={{ paddingTop: 90, color: "var(--tx3)" }}><span className="spin" /> Loading</div></div>;
@@ -1140,6 +1242,7 @@ export default function App() {
         {route.v === "results" && <Results {...route} nav={nav} />}
         {route.v === "mockresult" && <MockResult {...route} bands={bank.bands} nav={nav} />}
         {route.v === "tutor" && <Tutor nav={nav} />}
+        {route.v === "pricing" && <Pricing nav={nav} />}
         </Shell>
         )}
       </div>
@@ -1402,9 +1505,87 @@ function ResetPage({ go }) {
 
 /* ---------------------------- dashboard ---------------------------- */
 
+/* ---------------------------- plans and credits ----------------------------
+   Equity is the AI tutor. Free has none; Pro and Max get a daily credit
+   allowance sized so AI spend stays near 15% of what the plan earns.
+   The counter here is the student's view of it; the real limit is enforced
+   server side in the tutor function, which is what actually spends money.
+--------------------------------------------------------------------------- */
+
+const PLANS = {
+  free: { key: "free", name: "Free", monthly: 0, yearly: 0, credits: 0 },
+  pro: { key: "pro", name: "Pro", monthly: 8, yearly: 79, credits: 12 },
+  max: { key: "max", name: "Max", monthly: 20, yearly: 199, credits: 30 },
+};
+const todayKey = () => new Date().toISOString().slice(0, 10);
+
+function useCredits() {
+  const [plan, setPlan] = useLocal("equilibrium:plan", "free");
+  const [log, setLog] = useLocal("equilibrium:credits", { date: todayKey(), used: 0 });
+  const used = log.date === todayKey() ? log.used : 0;
+  const allowance = (PLANS[plan] || PLANS.free).credits;
+  return {
+    plan, setPlan, allowance,
+    left: Math.max(0, allowance - used),
+    spend: (n = 1) => setLog({ date: todayKey(), used: used + n }),
+  };
+}
+
+/* Consecutive days with at least one question answered. */
+function streakOf(days) {
+  const set = new Set(Object.keys(days || {}).filter((d) => days[d] > 0));
+  if (!set.size) return 0;
+  const d = new Date();
+  if (!set.has(todayKey())) d.setDate(d.getDate() - 1);   // today still counts as alive
+  let n = 0;
+  for (;;) {
+    const k = d.toISOString().slice(0, 10);
+    if (!set.has(k)) break;
+    n += 1;
+    d.setDate(d.getDate() - 1);
+  }
+  return n;
+}
+
+/* AP exams sit in the first half of May; the date is editable on the card. */
+function defaultExamDate() {
+  const now = new Date();
+  const may = new Date(now.getFullYear(), 4, 14);
+  if (now > may) may.setFullYear(now.getFullYear() + 1);
+  return may.toISOString().slice(0, 10);
+}
+const daysUntil = (iso) => Math.max(0, Math.ceil((new Date(iso + "T00:00:00") - new Date(todayKey() + "T00:00:00")) / 86400000));
+
+function CreditChip({ nav }) {
+  const { plan, allowance, left } = useCredits();
+  if (plan === "free") {
+    return <button className="credchip up" onClick={() => nav.go({ v: "pricing" })}>Equity is on Pro — see plans</button>;
+  }
+  return (
+    <button className={"credchip" + (left === 0 ? " out" : "")} onClick={() => nav.go({ v: "pricing" })}>
+      <span className="dotc" /> {left} of {allowance} Equity credits left today
+    </button>
+  );
+}
+
 function Dashboard({ bank, me, user, nav }) {
   const { go } = nav;
   const [savedIds] = useLocal("equilibrium:saved", []);
+  const [examDate, setExamDate] = useLocal("equilibrium:exam", defaultExamDate());
+  const [goal] = useLocal("equilibrium:goal", 20);
+  const [last] = useLocal("equilibrium:last", null);
+  const left = daysUntil(examDate);
+  const doneToday = (me.days || {})[todayKey()] || 0;
+  const streak = streakOf(me.days);
+
+  /* Rebuild the set the student was last working on, straight from the bank. */
+  const resume = () => {
+    if (!last) return go({ v: "bank", subject: "micro" });
+    const pool = bank.questions.filter((q) => q.subject === last.subject
+      && (!last.codes?.length || last.codes.includes(q.topic)));
+    if (!pool.length) return go({ v: "bank", subject: last.subject });
+    go({ v: "practice", subject: last.subject, unit: 0, pool });
+  };
   const hour = new Date().getHours();
   const part = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
   const name = user?.user_metadata?.name || (user?.email || "").split("@")[0];
@@ -1424,9 +1605,42 @@ function Dashboard({ bank, me, user, nav }) {
 
   return (
     <div className="wrap" style={{ paddingTop: 30 }}>
-      <h1 className="greet">{part}, <em>{name}</em></h1>
-      <div className="sub" style={{ color: "var(--tx2)", fontSize: 16 }}>
-        {a ? "Here is where you stand and what to do next." : "Pick a course below and answer your first questions."}
+      <div className="greetrow">
+        <div>
+          <h1 className="greet">{part}, <em>{name}</em></h1>
+          <div className="sub" style={{ color: "var(--tx2)", fontSize: 16 }}>
+            {a ? "Here is where you stand and what to do next." : "Pick a course below and answer your first questions."}
+          </div>
+        </div>
+        <CreditChip nav={nav} />
+      </div>
+
+      <div className="todaygrid">
+        <div className="tcard">
+          <span className="tlab">Exam in</span>
+          <span className="tbig">{left} <small>days</small></span>
+          <input type="date" className="tdate" value={examDate}
+            onChange={(e) => setExamDate(e.target.value || defaultExamDate())} aria-label="Exam date" />
+        </div>
+        <div className="tcard">
+          <span className="tlab">Today's goal</span>
+          <span className="tbig">{doneToday} <small>of {goal}</small></span>
+          <span className="tbar"><i style={{ width: `${Math.min(100, (doneToday / goal) * 100)}%` }} /></span>
+          <span className="thint">{doneToday >= goal ? "Done for today." : `${goal - doneToday} questions to go`}</span>
+        </div>
+        <div className="tcard">
+          <span className="tlab">Streak</span>
+          <span className="tbig">{streak} <small>day{streak === 1 ? "" : "s"}</small></span>
+          <span className="thint">{streak ? "Answer one question to keep it." : "Answer a question to start one."}</span>
+        </div>
+        <button className="tcard go" onClick={resume}>
+          <span className="tlab">Continue where you stopped</span>
+          <span className="tgo">{last ? last.label : "Start with Micro Unit 1"}</span>
+          <span className="tarrow">Resume
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2"
+              strokeLinecap="round" strokeLinejoin="round"><path d="M3 8h9M8.5 4.5 12 8l-3.5 3.5" /></svg>
+          </span>
+        </button>
       </div>
 
       <div className="kpis">
@@ -1471,8 +1685,8 @@ function Dashboard({ bank, me, user, nav }) {
             <button className="btn sm" disabled={!missed} onClick={() => go({ v: "saved" })}>Start review</button>
           </div>
           <div className="panel">
-            <h3>Ask Equi</h3>
-            <p className="ptext">A tutor that stays inside AP Micro and Macro and answers with the graphs.</p>
+            <h3>Ask Equity</h3>
+            <p className="ptext">Equity stays inside AP Micro and Macro and answers with the graphs.</p>
             <button className="btn sm ghost" onClick={() => go({ v: "tutor" })}>Open the tutor</button>
           </div>
         </div>
@@ -1710,6 +1924,7 @@ function UnitPage({ subject, unit, bank, me, nav }) {
 
 /* ---------------------------- icons ---------------------------- */
 const I = {
+  plan: "M2.5 6.5h13M2.5 6.5 4 3h10l1.5 3.5M2.5 6.5V15h13V6.5M7 9.5h4",
   home: <path d="M2.5 7.2 9 2.2l6.5 5V15a.8.8 0 0 1-.8.8h-3.4v-4.4H6.7v4.4H3.3a.8.8 0 0 1-.8-.8Z" />,
   tutor: <path d="M2.6 3.5h12.8v8.2H9.9L6.4 14.6v-2.9H2.6Z" />,
   planner: <path d="M3 4.2h12v11H3Zm0 3.4h12M6.2 2.4v3.2m5.6-3.2v3.2" />,
@@ -1745,7 +1960,7 @@ function Shell({ nav, active, children }) {
           <Brand size={20} mark={26} />
         </button>
         {item("home", "Home", I.home, { v: "home" })}
-        {item("tutor", "Ask Equi tutor", I.tutor, { v: "tutor" })}
+        {item("tutor", "Ask Equity", I.tutor, { v: "tutor" })}
         {item("planner", "Study planner", I.planner, { v: "planner" })}
         {item("analytics", "Analytics", I.analytics, { v: "analytics" })}
         {item("saved", "Saved and mistakes", I.saved, { v: "saved" })}
@@ -1754,6 +1969,7 @@ function Shell({ nav, active, children }) {
         {item("bank-macro", "Question bank · Macro", I.bank, { v: "bank", subject: "macro" }, "var(--macro)")}
         {item("test", "Full-length test", I.test, { v: "tests" })}
         <div className="sfoot">
+          {item("pricing", "Plans", I.plan, { v: "pricing" })}
           <button className="sitem" title="Switch theme"
             onClick={(e) => { e.currentTarget.blur(); toggleTheme(); }}>
             <ThemeIcon light={theme === "light"} />
@@ -1784,17 +2000,40 @@ function Shell({ nav, active, children }) {
    eliminator, text highlighting, a private note, and check-then-next.
 --------------------------------------------------------------------------- */
 
+/* Every component holding the same key stays in step: the plan chip in the
+   header and the Equity button in a question must never disagree. */
+const localSubs = new Map();
+
 function useLocal(key, initial) {
   const [v, setV] = useState(() => {
     try { const r = localStorage.getItem(key); return r ? JSON.parse(r) : initial; } catch { return initial; }
   });
+
+  useEffect(() => {
+    const subs = localSubs.get(key) || new Set();
+    subs.add(setV);
+    localSubs.set(key, subs);
+    const fromTab = (e) => {
+      if (e.key !== key) return;
+      try { setV(e.newValue ? JSON.parse(e.newValue) : initial); } catch { /* ignore */ }
+    };
+    window.addEventListener("storage", fromTab);
+    return () => { subs.delete(setV); window.removeEventListener("storage", fromTab); };
+  }, [key]);   // eslint-disable-line react-hooks/exhaustive-deps
+
+  /* The write happens here rather than inside the state updater: React drops
+     pending updaters when a component unmounts, and this setter is often the
+     last thing a screen does before navigating away. */
+  const ref = useRef(v);
+  ref.current = v;
   const set = useCallback((next) => {
-    setV((prev) => {
-      const val = typeof next === "function" ? next(prev) : next;
-      try { localStorage.setItem(key, JSON.stringify(val)); } catch { /* private mode */ }
-      return val;
-    });
+    const val = typeof next === "function" ? next(ref.current) : next;
+    ref.current = val;
+    try { localStorage.setItem(key, JSON.stringify(val)); } catch { /* private mode */ }
+    setV(val);
+    (localSubs.get(key) || []).forEach((fn) => { if (fn !== setV) fn(val); });
   }, [key]);
+
   return [v, set];
 }
 
@@ -2050,8 +2289,13 @@ function Bank({ subject, bank, me, nav }) {
     const [bu, bt] = String(b.topic || "9.9").split(".").map(Number);
     return au - bu || at - bt || String(a.id).localeCompare(String(b.id), undefined, { numeric: true });
   });
-  const start = (list) => { if (list.length) go({ v: "practice", subject, unit: 0, pool: byTopic(list) }); };
-  const startPicked = () => start(pool.filter((q) => picked.includes(q.topic)));
+  const [, setLast] = useLocal("equilibrium:last", null);
+  const start = (list, codes, label) => {
+    if (!list.length) return;
+    setLast({ subject, codes: codes || [], label: label || `AP ${SNAME[subject]} · ${codes?.join(", ") || "all topics"}` });
+    go({ v: "practice", subject, unit: 0, pool: byTopic(list) });
+  };
+  const startPicked = () => start(pool.filter((q) => picked.includes(q.topic)), picked);
   const toggle = (code) => setPicked((p) => (p.includes(code) ? p.filter((x) => x !== code) : [...p, code]));
 
   const pickedCount = pool.filter((q) => picked.includes(q.topic)).length;
@@ -2078,27 +2322,38 @@ function Bank({ subject, bank, me, nav }) {
           ))}
         </div>
 
-        <div className="allcard">
+        <div className={"allcard" + (picked.length ? " ready" : "")}>
           {picked.length > 0 ? (
             <div>
-              <h3>Practise the topics you picked</h3>
+              <h3>{pickedCount} question{pickedCount === 1 ? "" : "s"} selected</h3>
               <p>
-                {pickedCount} question{pickedCount === 1 ? "" : "s"} from {picked.length} topic{picked.length === 1 ? "" : "s"}: {picked.slice().sort((a, b) => parseFloat(a) - parseFloat(b)).join(", ")}
+                From {picked.length} topic{picked.length === 1 ? "" : "s"}: {picked.slice().sort((a, b) => parseFloat(a) - parseFloat(b)).join(", ")}
                 <button className="linkish" onClick={() => setPicked([])}>Clear</button>
               </p>
             </div>
           ) : (
             <div>
-              <h3>Practise every topic</h3>
-              <p>{total ? `${total} question${total === 1 ? "" : "s"} across all six units. Tick topics below to narrow it down.` : "No questions here yet."}</p>
+              <h3>Choose what to practise</h3>
+              <p>{total ? "Tick one or more topics below, or open a single topic on its own." : "No questions here yet."}</p>
             </div>
           )}
-          <button className="btn acc"
-            disabled={picked.length > 0 ? !pickedCount : !total}
-            onClick={() => (picked.length > 0 ? startPicked() : start(pool))}>
-            Start practice
-          </button>
+          <div className="allact">
+            <button className="btn acc" disabled={!pickedCount}
+              onClick={startPicked}>
+              Start practice
+            </button>
+            {!picked.length && <span className="hint">Tick a topic to begin</span>}
+          </div>
         </div>
+
+        {picked.length > 0 && (
+          <div className="pickbar">
+            <span><b className="num">{pickedCount}</b> questions · {picked.length} topic{picked.length === 1 ? "" : "s"}</span>
+            <span style={{ flex: 1 }} />
+            <button className="btn ghost sm" onClick={() => setPicked([])}>Clear</button>
+            <button className="btn acc sm" onClick={startPicked}>Start practice</button>
+          </div>
+        )}
 
         {UNITS[subject].map((u) => {
           const rows = TOPICS[subject][u.n] || [];
@@ -2121,7 +2376,7 @@ function Bank({ subject, bank, me, nav }) {
                       <input type="checkbox" className="cbx" disabled={!n} checked={picked.includes(code)}
                         onChange={() => toggle(code)} aria-label={`Select topic ${code}`} />
                       <button className="tp" style={{ background: "none", border: 0, padding: 0 }}
-                        disabled={!n} onClick={() => start(forTopic(code))}>
+                        disabled={!n} onClick={() => start(forTopic(code), [code], `AP ${SNAME[subject]} · ${code} ${title}`)}>
                         <span className="tc">{code}</span>
                         <span className="tt">{title}</span>
                       </button>
@@ -2172,6 +2427,7 @@ function Practice({ subject, unit, pool, go, onFinish, nav }) {
   const [help, setHelp] = useState({});        // id -> tutor text
   const [helping, setHelping] = useState(false);
   const [savedIds, setSavedIds] = useLocal("equilibrium:saved", []);
+  const credits = useCredits();
   const doneRef = useRef(false);
 
   const q = pool[idx];
@@ -2233,7 +2489,9 @@ function Practice({ subject, unit, pool, go, onFinish, nav }) {
   }, [q, revealed, pick, check, next, prev, grid, confirm]);
 
   const askDeeper = async () => {
+    if (credits.left === 0) return;
     setHelping(true);
+    credits.spend();
     try {
       const txt = await askClaude(
         [{ role: "user", content: `AP ${SNAME[subject]} question:\n\n${q.stem}\n\n${q.choices.map((c, i) => `${L[i]}. ${c}`).join("\n")}\n\nCorrect answer: ${L[q.answer]}\nI chose ${L[picked]}.\n\nExplain this a different way from a standard answer key. Use the relevant graph and walk through what shifts and why. Under 160 words.` }],
@@ -2278,8 +2536,21 @@ function Practice({ subject, unit, pool, go, onFinish, nav }) {
             </div>
             <p>{q.explanation}</p>
             {help[q.id] && <p style={{ marginTop: 16, paddingTop: 16, borderTop: "1px solid var(--line)" }}>{help[q.id]}</p>}
-            {!help[q.id] && <button className="mini" style={{ marginTop: 14 }} onClick={askDeeper} disabled={helping}>
-              {helping ? <><span className="spin" /> Thinking</> : "Explain it another way"}</button>}
+            {!help[q.id] && (
+              credits.plan === "free" ? (
+                <button className="mini eqbtn" style={{ marginTop: 14 }} onClick={() => go({ v: "pricing" })}>
+                  Explain with Equity <span className="eqleft lock">Pro</span>
+                </button>
+              ) : (
+                <button className="mini eqbtn" style={{ marginTop: 14 }} onClick={askDeeper}
+                  disabled={helping || credits.left === 0}>
+                  {helping ? <><span className="spin" /> Equity is thinking</> : "Explain with Equity"}
+                  <span className={"eqleft" + (credits.left === 0 ? " lock" : "")}>
+                    {credits.left === 0 ? "none left today" : `${credits.left} left today`}
+                  </span>
+                </button>
+              )
+            )}
           </div>
         )}
         <div style={{ height: 96 }} />
@@ -2399,6 +2670,86 @@ function ReviewList({ items, defaultOpen = false }) {
           </details>
         );
       })}
+    </div>
+  );
+}
+
+/* ---------------------------- pricing ---------------------------- */
+
+function Pricing({ nav }) {
+  const { go } = nav;
+  const { plan, setPlan } = useCredits();
+  const [cycle, setCycle] = useState("monthly");
+  const yearly = cycle === "yearly";
+
+  const rows = [
+    ["Question bank", "20 questions a day", "Everything, unlimited", "Everything, unlimited"],
+    ["Full-length tests", "1 test", "Unlimited", "Unlimited"],
+    ["Saved and mistakes", "20 questions", "Unlimited", "Unlimited"],
+    ["Analytics", "Last 7 days", "Full history", "Full history"],
+    ["Study planner", "—", "Yes", "Yes"],
+    ["Equity AI tutor", "—", "12 credits a day", "30 credits a day"],
+    ["Explain with Equity", "—", "Included", "Included"],
+    ["Deep explanations", "—", "—", "Included"],
+  ];
+  const tiers = [
+    { k: "free", tag: "", blurb: "The whole question bank, a day at a time." },
+    { k: "pro", tag: "Most Popular", blurb: "Unlimited practice and Equity every day." },
+    { k: "max", tag: "", blurb: "For the months right before the exam." },
+  ];
+
+  return (
+    <div className="wrap" style={{ maxWidth: 1040 }}>
+      <div className="phead" style={{ paddingTop: 30, display: "block", textAlign: "center" }}>
+        <h1>Plans</h1>
+        <div className="sub" style={{ maxWidth: 520, margin: "10px auto 0" }}>
+          Everything on this site was built for two exams. Pick how much of it you want open.
+        </div>
+        <div className="cycle">
+          <button className={cycle === "monthly" ? "on" : ""} onClick={() => setCycle("monthly")}>Monthly</button>
+          <button className={cycle === "yearly" ? "on" : ""} onClick={() => setCycle("yearly")}>
+            Yearly <span className="save">2 months free</span>
+          </button>
+        </div>
+      </div>
+
+      <div className="plans">
+        {tiers.map(({ k, tag, blurb }) => {
+          const pl = PLANS[k];
+          const price = yearly ? pl.yearly : pl.monthly;
+          return (
+            <div key={k} className={"plan" + (k === "pro" ? " popular" : "") + (plan === k ? " current" : "")}>
+              {tag && <span className="ptag">{tag}</span>}
+              <h3>{pl.name}</h3>
+              <div className="pprice">
+                <b>${price}</b><span>{price === 0 ? "" : yearly ? "/year" : "/month"}</span>
+              </div>
+              <p className="pblurb">{blurb}</p>
+              <button className={"btn" + (k === "pro" ? " acc" : " ghost")} disabled={plan === k}
+                onClick={() => { setPlan(k); go({ v: "home" }); }}>
+                {plan === k ? "Your plan" : k === "free" ? "Switch to Free" : `Choose ${pl.name}`}
+              </button>
+              <ul className="plist">
+                {rows.map(([label, f, pr, mx]) => {
+                  const val = k === "free" ? f : k === "pro" ? pr : mx;
+                  return (
+                    <li key={label} className={val === "—" ? "off" : ""}>
+                      <span className="pmark">{val === "—" ? "·" : "✓"}</span>
+                      <span>{label}{val === "—" || val === "Yes" || val === "Included" ? "" : ` — ${val}`}</span>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          );
+        })}
+      </div>
+
+      <p className="hint" style={{ textAlign: "center", marginTop: 26, maxWidth: 560, marginInline: "auto" }}>
+        One Equity credit is one answer from the tutor. Credits reset every morning and do not roll over.
+        Payment is by card transfer and your plan opens once it is confirmed.
+      </p>
+      <div style={{ height: 60 }} />
     </div>
   );
 }

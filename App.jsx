@@ -728,7 +728,6 @@ const CSS = `
 .eq .cycle{display:inline-flex;gap:4px;margin-top:22px;background:var(--surf2);border-radius:999px;padding:4px;}
 .eq .cycle button{border:0;background:none;color:var(--tx2);padding:9px 20px;border-radius:999px;font-size:14px;font-weight:500;}
 .eq .cycle button.on{background:var(--bg2);color:var(--tx);box-shadow:var(--shadow);}
-.eq .cycle .save{font-size:11px;color:var(--ok);margin-left:6px;}
 .eq .plans{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:34px;align-items:start;}
 .eq .plan{position:relative;background:var(--bg2);border:1px solid var(--line);border-radius:18px;padding:26px 24px;}
 .eq .plan.popular{border-color:var(--accent);box-shadow:var(--shadow);transform:translateY(-10px);padding-top:32px;}
@@ -1969,7 +1968,7 @@ function Shell({ nav, active, children }) {
         {item("bank-macro", "Question bank · Macro", I.bank, { v: "bank", subject: "macro" }, "var(--macro)")}
         {item("test", "Full-length test", I.test, { v: "tests" })}
         <div className="sfoot">
-          {item("pricing", "Plans", I.plan, { v: "pricing" })}
+          {item("pricing", "Pricing", I.plan, { v: "pricing" })}
           <button className="sitem" title="Switch theme"
             onClick={(e) => { e.currentTarget.blur(); toggleTheme(); }}>
             <ThemeIcon light={theme === "light"} />
@@ -2683,32 +2682,30 @@ function Pricing({ nav }) {
   const yearly = cycle === "yearly";
 
   const rows = [
-    ["Question bank", "20 questions a day", "Everything, unlimited", "Everything, unlimited"],
-    ["Full-length tests", "1 test", "Unlimited", "Unlimited"],
+    ["Question bank", "20 a day", "Unlimited", "Unlimited"],
+    ["Full-length tests", "1", "Unlimited", "Unlimited"],
     ["Saved and mistakes", "20 questions", "Unlimited", "Unlimited"],
-    ["Analytics", "Last 7 days", "Full history", "Full history"],
-    ["Study planner", "—", "Yes", "Yes"],
-    ["Equity AI tutor", "—", "12 credits a day", "30 credits a day"],
-    ["Explain with Equity", "—", "Included", "Included"],
-    ["Deep explanations", "—", "—", "Included"],
+    ["Analytics and planner", "—", "Yes", "Yes"],
+    ["Equity AI tutor", "—", "12 a day", "30 a day"],
+    ["Deep explanations", "—", "—", "Yes"],
   ];
   const tiers = [
-    { k: "free", tag: "", blurb: "The whole question bank, a day at a time." },
-    { k: "pro", tag: "Most Popular", blurb: "Unlimited practice and Equity every day." },
-    { k: "max", tag: "", blurb: "For the months right before the exam." },
+    { k: "free", tag: "", blurb: "The question bank, a day at a time." },
+    { k: "pro", tag: "Most Popular", blurb: "Unlimited practice, Equity every day." },
+    { k: "max", tag: "", blurb: "For the months before the exam." },
   ];
 
   return (
     <div className="wrap" style={{ maxWidth: 1040 }}>
       <div className="phead" style={{ paddingTop: 30, display: "block", textAlign: "center" }}>
-        <h1>Plans</h1>
-        <div className="sub" style={{ maxWidth: 520, margin: "10px auto 0" }}>
-          Everything on this site was built for two exams. Pick how much of it you want open.
+        <h1>Pricing</h1>
+        <div className="sub" style={{ maxWidth: 440, margin: "10px auto 0" }}>
+          Pick how much of the site you want open.
         </div>
         <div className="cycle">
           <button className={cycle === "monthly" ? "on" : ""} onClick={() => setCycle("monthly")}>Monthly</button>
           <button className={cycle === "yearly" ? "on" : ""} onClick={() => setCycle("yearly")}>
-            Yearly <span className="save">2 months free</span>
+            Yearly
           </button>
         </div>
       </div>
@@ -2735,7 +2732,7 @@ function Pricing({ nav }) {
                   return (
                     <li key={label} className={val === "—" ? "off" : ""}>
                       <span className="pmark">{val === "—" ? "·" : "✓"}</span>
-                      <span>{label}{val === "—" || val === "Yes" || val === "Included" ? "" : ` — ${val}`}</span>
+                      <span>{label}{val === "—" || val === "Yes" ? "" : ` · ${val}`}</span>
                     </li>
                   );
                 })}
@@ -2745,9 +2742,8 @@ function Pricing({ nav }) {
         })}
       </div>
 
-      <p className="hint" style={{ textAlign: "center", marginTop: 26, maxWidth: 560, marginInline: "auto" }}>
-        One Equity credit is one answer from the tutor. Credits reset every morning and do not roll over.
-        Payment is by card transfer and your plan opens once it is confirmed.
+      <p className="hint" style={{ textAlign: "center", marginTop: 26 }}>
+        One Equity credit is one answer from the tutor. Credits reset every morning.
       </p>
       <div style={{ height: 60 }} />
     </div>

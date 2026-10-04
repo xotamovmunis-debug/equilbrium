@@ -154,6 +154,7 @@ const CSS = `
   --pgrid:#1A2234; --paxis:#3A465F; --markbg:#0E1524; --markline:#293349;
   --navbg:rgba(7,10,18,.8); --glowA:rgba(47,192,205,.13); --glowB:rgba(240,169,58,.09);
   --shadow:0 30px 80px -30px rgba(0,0,0,.9);
+  --ease:cubic-bezier(.2,.7,.2,1); --spring:cubic-bezier(.2,.9,.3,1.25);
   --qok:rgba(53,209,138,.18); --qoktx:#5FE3A7; --qno:rgba(255,110,110,.18); --qnotx:#FF9A9A;
   --qpend:rgba(240,169,58,.18); --qpendtx:#F5C46B;
   --accent:var(--macro);
@@ -702,9 +703,10 @@ const CSS = `
 /* ---- question bank, card style ---- */
 .eq .allcard.ready{border-color:var(--accent);}
 .eq .allact{display:flex;align-items:center;gap:14px;}
-.eq .pickbar{position:sticky;top:10px;z-index:20;display:flex;align-items:center;gap:12px;margin:18px 0 6px;
-  background:var(--bg2);border:1px solid var(--accent);border-radius:14px;padding:12px 18px;font-size:14px;
-  box-shadow:var(--shadow);}
+.eq .pickbar{position:fixed;left:94px;right:28px;bottom:18px;z-index:30;display:flex;align-items:center;gap:12px;
+  max-width:980px;margin:0 auto;background:var(--bg2);border:1px solid var(--accent);border-radius:14px;
+  padding:12px 18px;font-size:14px;box-shadow:var(--shadow);}
+.eq .pickbar span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .eq .btable{display:flex;flex-direction:column;gap:8px;border:0;background:none;}
 .eq .bhead{display:none;}
 .eq .brow{display:grid;grid-template-columns:24px 1fr 170px 74px;align-items:center;gap:16px;
@@ -762,12 +764,101 @@ const CSS = `
   .eq .brow{grid-template-columns:22px 1fr auto;gap:11px;padding:13px 14px;row-gap:9px;}
   .eq .brow .prog{grid-column:2 / -1;}
   .eq .brow .tt{font-size:14.5px;}
-  .eq .pickbar{position:fixed;left:10px;right:10px;bottom:10px;top:auto;margin:0;}
+  .eq .pickbar{left:10px;right:10px;bottom:10px;flex-wrap:wrap;}
   .eq .allact{flex-direction:column;align-items:stretch;}
   .eq .allcard .btn{width:100%;justify-content:center;}
   .eq .cycle{width:100%;justify-content:center;}
   .eq .eqbtn{width:100%;justify-content:space-between;}
 }
+
+/* ---------------------------------------------------------------
+   Craft pass: one orchestrated entrance on the dashboard, and after
+   that motion only answers something the student did. Colours, border
+   widths and border colours are untouched throughout.
+----------------------------------------------------------------- */
+
+/* fine grain and a soft vignette give the flat background some depth */
+.eq::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.035;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");}
+.eq.light::after{opacity:.05;}
+.eq .main{position:relative;}
+
+/* typography: tighter display, calmer measure, numerals that never jitter */
+.eq h1{letter-spacing:-.025em;line-height:1.04;text-wrap:balance;}
+.eq h2,.eq h3{letter-spacing:-.012em;text-wrap:balance;}
+.eq p,.eq .sub,.eq .ptext{text-wrap:pretty;}
+.eq .sub,.eq .ptext,.eq .rvexp,.eq .prose p{max-width:68ch;}
+.eq .tbig,.eq .pprice b,.eq .digits,.eq .kpi2 .v,.eq .score .n{font-variant-numeric:tabular-nums;
+  font-feature-settings:"tnum" 1;}
+
+/* the single page-load sequence, on the dashboard only */
+@keyframes rise{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:none;}}
+.eq .todaygrid > *{animation:rise .5s var(--ease) both;}
+.eq .todaygrid > *:nth-child(2){animation-delay:.06s;}
+.eq .todaygrid > *:nth-child(3){animation-delay:.12s;}
+.eq .todaygrid > *:nth-child(4){animation-delay:.18s;}
+
+/* everything below is a response to a click, a tap or a keypress */
+.eq button{transition:transform .12s var(--ease),filter .15s var(--ease),
+  background .18s var(--ease),border-color .18s var(--ease),opacity .15s var(--ease);}
+.eq button:active:not(:disabled){transform:translateY(1px) scale(.994);}
+.eq .btn:disabled,.eq .mini:disabled{opacity:.45;cursor:not-allowed;}
+.eq .opt{transition:transform .14s var(--ease),border-color .18s var(--ease),background .18s var(--ease);}
+.eq .opt:active:not(:disabled){transform:scale(.995);}
+
+/* the answer landing is the moment worth animating in practice */
+@keyframes settle{from{opacity:0;transform:translateY(-6px);}to{opacity:1;transform:none;}}
+.eq .fb{animation:settle .34s var(--ease) both;}
+@keyframes markpulse{0%{box-shadow:0 0 0 0 currentColor;}100%{box-shadow:0 0 0 7px transparent;}}
+.eq .opt.right .k,.eq .opt.wrong .k{animation:markpulse .55s var(--ease) both;}
+
+/* dialogs and the question map open from where they are, not from nowhere */
+@keyframes sheetin{from{opacity:0;transform:translateY(14px) scale(.985);}to{opacity:1;transform:none;}}
+@keyframes fadein{from{opacity:0;}to{opacity:1;}}
+.eq .sheet{animation:fadein .18s var(--ease) both;}
+.eq .sheetin,.eq .qmap{animation:sheetin .26s var(--ease) both;}
+.eq .qmcell{transition:transform .12s var(--spring),background .15s var(--ease);}
+.eq .qmcell:active{transform:scale(.93);}
+
+/* the selection bar slides in when it has something to say */
+@keyframes barup{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:none;}}
+.eq .pickbar{animation:barup .28s var(--ease) both;}
+
+/* ticking a topic should feel like a switch, not a repaint */
+.eq .cbx{transition:transform .14s var(--spring);}
+.eq .cbx:active{transform:scale(.88);}
+.eq .brow .bar i,.eq .tbar i{transition:width .5s var(--ease);}
+
+/* credits tick down visibly, so the limit is never a surprise */
+@keyframes creditflash{0%{transform:scale(1);}35%{transform:scale(1.06);}100%{transform:scale(1);}}
+.eq .credchip.spent{animation:creditflash .4s var(--ease);}
+
+/* forms: one consistent field, with focus you can actually see */
+.eq input[type=text],.eq input[type=email],.eq input[type=password],.eq input[type=number],
+.eq input[type=date],.eq textarea,.eq select{
+  width:100%;background:var(--surf);border:1px solid var(--line);border-radius:11px;
+  padding:12px 14px;color:var(--tx);font-family:inherit;font-size:15px;line-height:1.5;
+  transition:border-color .16s var(--ease),box-shadow .16s var(--ease),background .16s var(--ease);}
+.eq input::placeholder,.eq textarea::placeholder{color:var(--tx3);}
+.eq input:hover:not(:disabled),.eq textarea:hover,.eq select:hover{background:var(--surf2);}
+.eq input:focus,.eq textarea:focus,.eq select:focus{outline:none;border-color:var(--accent);
+  box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 22%,transparent);}
+.eq .field{display:flex;flex-direction:column;gap:7px;margin-bottom:16px;}
+.eq .field > label{font-size:13.5px;color:var(--tx2);font-weight:500;}
+.eq input.tdate{width:auto;padding:0;background:none;border:0;border-radius:0;font-size:12.5px;color:var(--tx3);}
+.eq input.tdate:hover{background:none;color:var(--tx2);}
+.eq input.tdate:focus{box-shadow:none;border:0;text-decoration:underline;}
+.eq input.tdate::-webkit-calendar-picker-indicator{opacity:.4;cursor:pointer;}
+
+/* keyboard users get the same clarity as mouse users */
+.eq :focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:8px;}
+.eq button:focus:not(:focus-visible){outline:none;}
+
+@media (prefers-reduced-motion: reduce){
+  .eq *,.eq *::before,.eq *::after{animation-duration:.001ms !important;animation-iteration-count:1 !important;
+    transition-duration:.001ms !important;scroll-behavior:auto !important;}
+}
+
 .eq .pfoot{position:fixed;left:0;right:0;bottom:0;z-index:35;background:var(--navbg);backdrop-filter:blur(14px);
   border-top:1px solid var(--line);}
 .eq .pfin{max-width:860px;margin:0 auto;padding:12px 24px;display:flex;align-items:center;gap:10px;}
@@ -1555,6 +1646,24 @@ function defaultExamDate() {
 }
 const daysUntil = (iso) => Math.max(0, Math.ceil((new Date(iso + "T00:00:00") - new Date(todayKey() + "T00:00:00")) / 86400000));
 
+/* Counts once when the dashboard mounts, as part of the entrance. */
+function CountUp({ to, ms = 650 }) {
+  const [n, setN] = useState(0);
+  useEffect(() => {
+    if (!to || window.matchMedia("(prefers-reduced-motion: reduce)").matches) { setN(to); return; }
+    let raf = 0;
+    const t0 = performance.now();
+    const tick = (t) => {
+      const k = Math.min(1, (t - t0) / ms);
+      setN(Math.round(to * (1 - Math.pow(1 - k, 3))));
+      if (k < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [to, ms]);
+  return <>{n}</>;
+}
+
 function CreditChip({ nav }) {
   const { plan, allowance, left } = useCredits();
   if (plan === "free") {
@@ -1617,19 +1726,19 @@ function Dashboard({ bank, me, user, nav }) {
       <div className="todaygrid">
         <div className="tcard">
           <span className="tlab">Exam in</span>
-          <span className="tbig">{left} <small>days</small></span>
+          <span className="tbig"><CountUp to={left} /> <small>days</small></span>
           <input type="date" className="tdate" value={examDate}
             onChange={(e) => setExamDate(e.target.value || defaultExamDate())} aria-label="Exam date" />
         </div>
         <div className="tcard">
           <span className="tlab">Today's goal</span>
-          <span className="tbig">{doneToday} <small>of {goal}</small></span>
+          <span className="tbig"><CountUp to={doneToday} /> <small>of {goal}</small></span>
           <span className="tbar"><i style={{ width: `${Math.min(100, (doneToday / goal) * 100)}%` }} /></span>
           <span className="thint">{doneToday >= goal ? "Done for today." : `${goal - doneToday} questions to go`}</span>
         </div>
         <div className="tcard">
           <span className="tlab">Streak</span>
-          <span className="tbig">{streak} <small>day{streak === 1 ? "" : "s"}</small></span>
+          <span className="tbig"><CountUp to={streak} /> <small>day{streak === 1 ? "" : "s"}</small></span>
           <span className="thint">{streak ? "Answer one question to keep it." : "Answer a question to start one."}</span>
         </div>
         <button className="tcard go" onClick={resume}>
@@ -1923,7 +2032,6 @@ function UnitPage({ subject, unit, bank, me, nav }) {
 
 /* ---------------------------- icons ---------------------------- */
 const I = {
-  plan: "M2.5 6.5h13M2.5 6.5 4 3h10l1.5 3.5M2.5 6.5V15h13V6.5M7 9.5h4",
   home: <path d="M2.5 7.2 9 2.2l6.5 5V15a.8.8 0 0 1-.8.8h-3.4v-4.4H6.7v4.4H3.3a.8.8 0 0 1-.8-.8Z" />,
   tutor: <path d="M2.6 3.5h12.8v8.2H9.9L6.4 14.6v-2.9H2.6Z" />,
   planner: <path d="M3 4.2h12v11H3Zm0 3.4h12M6.2 2.4v3.2m5.6-3.2v3.2" />,
@@ -1931,6 +2039,7 @@ const I = {
   saved: <path d="M4.6 2.6h8.8v13l-4.4-3.3-4.4 3.3Z" />,
   bank: <path d="M3 4.4h12v9.2H3Zm0 3.1h12M7.2 7.5v6.1" />,
   test: <path d="M9 2.6a6.4 6.4 0 1 1 0 12.8A6.4 6.4 0 0 1 9 2.6Zm0 3v3.6l2.4 1.6" />,
+  plan: <path d="M2.6 6.6h12.8V15H2.6Zm0 0L4.3 3h9.4l1.7 3.6M7.1 9.6h3.8" />,
 };
 const Icon = ({ d }) => (
   <svg width="17" height="17" viewBox="0 0 18 18" fill="none" stroke="currentColor"
@@ -1967,8 +2076,9 @@ function Shell({ nav, active, children }) {
         {item("bank-micro", "Question bank · Micro", I.bank, { v: "bank", subject: "micro" }, "var(--micro)")}
         {item("bank-macro", "Question bank · Macro", I.bank, { v: "bank", subject: "macro" }, "var(--macro)")}
         {item("test", "Full-length test", I.test, { v: "tests" })}
+        <div className="sgroup"><span>Account</span></div>
+        {item("pricing", "Pricing", I.plan, { v: "pricing" })}
         <div className="sfoot">
-          {item("pricing", "Pricing", I.plan, { v: "pricing" })}
           <button className="sitem" title="Switch theme"
             onClick={(e) => { e.currentTarget.blur(); toggleTheme(); }}>
             <ThemeIcon light={theme === "light"} />
@@ -2321,33 +2431,19 @@ function Bank({ subject, bank, me, nav }) {
           ))}
         </div>
 
-        <div className={"allcard" + (picked.length ? " ready" : "")}>
-          {picked.length > 0 ? (
-            <div>
-              <h3>{pickedCount} question{pickedCount === 1 ? "" : "s"} selected</h3>
-              <p>
-                From {picked.length} topic{picked.length === 1 ? "" : "s"}: {picked.slice().sort((a, b) => parseFloat(a) - parseFloat(b)).join(", ")}
-                <button className="linkish" onClick={() => setPicked([])}>Clear</button>
-              </p>
-            </div>
-          ) : (
-            <div>
-              <h3>Choose what to practise</h3>
-              <p>{total ? "Tick one or more topics below, or open a single topic on its own." : "No questions here yet."}</p>
-            </div>
-          )}
-          <div className="allact">
-            <button className="btn acc" disabled={!pickedCount}
-              onClick={startPicked}>
-              Start practice
-            </button>
-            {!picked.length && <span className="hint">Tick a topic to begin</span>}
+        <div className="allcard">
+          <div>
+            <h3>Choose what to practise</h3>
+            <p>{total ? "Tick one or more topics below, or open a single topic on its own." : "No questions here yet."}</p>
           </div>
         </div>
 
         {picked.length > 0 && (
           <div className="pickbar">
-            <span><b className="num">{pickedCount}</b> questions · {picked.length} topic{picked.length === 1 ? "" : "s"}</span>
+            <span>
+              <b className="num">{pickedCount}</b> question{pickedCount === 1 ? "" : "s"} from{" "}
+              {picked.length} topic{picked.length === 1 ? "" : "s"}: {picked.slice().sort((a, b) => parseFloat(a) - parseFloat(b)).join(", ")}
+            </span>
             <span style={{ flex: 1 }} />
             <button className="btn ghost sm" onClick={() => setPicked([])}>Clear</button>
             <button className="btn acc sm" onClick={startPicked}>Start practice</button>
@@ -2395,19 +2491,7 @@ function Bank({ subject, bank, me, nav }) {
           );
         })}
 
-        {picked.length > 0 && (
-          <div className="selbar">
-            <span style={{ fontSize: 14 }}>
-              <b className="num">{picked.length}</b> topic{picked.length === 1 ? "" : "s"} selected ·{" "}
-              <b className="num">{pickedCount}</b> question{pickedCount === 1 ? "" : "s"}
-            </span>
-            <span style={{ display: "flex", gap: 10 }}>
-              <button className="btn ghost sm" onClick={() => setPicked([])}>Clear</button>
-              <button className="btn acc sm" disabled={!pickedCount} onClick={startPicked}>Start practice</button>
-            </span>
-          </div>
-        )}
-        <div style={{ height: 40 }} />
+                <div style={{ height: 96 }} />
       </div>
     </>
   );

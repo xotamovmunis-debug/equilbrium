@@ -685,6 +685,8 @@ const CSS = `
 .eq .credchip .dotc{width:7px;height:7px;border-radius:50%;background:var(--ok);}
 .eq .credchip.out .dotc{background:var(--no);}
 .eq .credchip.up{border-style:dashed;}
+.eq .examlist{display:flex;flex-direction:column;gap:3px;margin-top:auto;font-size:12.5px;color:var(--tx3);}
+.eq .examlist b{font-weight:600;color:var(--tx2);}
 .eq .todaygrid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:26px 0 8px;}
 .eq .tcard{position:relative;display:flex;flex-direction:column;gap:7px;align-items:flex-start;text-align:left;
   background:var(--bg2);border:1px solid var(--line);border-radius:16px;padding:18px 20px;min-height:124px;}
@@ -1327,7 +1329,7 @@ export default function App() {
         {route.v === "planner" && <Planner bank={bank} me={me} nav={nav} />}
         {route.v === "analytics" && <Analytics bank={bank} me={me} nav={nav} />}
         {route.v === "saved" && <Saved bank={bank} me={me} nav={nav} />}
-        {route.v === "tests" && <Tests bank={bank} nav={nav} />}
+        {route.v === "tests" && <Tests bank={bank} me={me} nav={nav} />}
         {route.v === "unit" && <UnitPage subject={route.subject} unit={route.unit} bank={bank} me={me} nav={nav} />}
         {route.v === "results" && <Results {...route} nav={nav} />}
         {route.v === "mockresult" && <MockResult {...route} bands={bank.bands} nav={nav} />}
@@ -1603,21 +1605,68 @@ function ResetPage({ go }) {
 --------------------------------------------------------------------------- */
 
 const PLANS = {
-  free: { key: "free", name: "Free", monthly: 0, yearly: 0, credits: 0 },
-  pro: { key: "pro", name: "Pro", monthly: 8, yearly: 79, credits: 12 },
-  max: { key: "max", name: "Max", monthly: 20, yearly: 199, credits: 30 },
+  free: { key: "free", name: "Free", monthly: 0, yearly: 0, equity: 0, questions: 20, tests: 1 },
+  pro: { key: "pro", name: "Pro", monthly: 8, yearly: 79, equity: 20, questions: 50, tests: 20 },
+  max: { key: "max", name: "Max", monthly: 20, yearly: 199, equity: 50, questions: 100, tests: 30 },
 };
 const todayKey = () => new Date().toISOString().slice(0, 10);
+const monthKey = () => new Date().toISOString().slice(0, 7);
+
+/* College Board sets one date per subject each May. These are the published
+   2027 dates; later years fall back to the same weekday pattern until the
+   real schedule is out, which is why the card says "expected". */
+const EXAM_DATES = {
+  micro: { "2027": "2027-05-04" },
+  macro: { "2027": "2027-05-07" },
+};
+const EXAM_LABEL = { micro: "AP Micro", macro: "AP Macro" };
+
+function nextExam(subject) {
+  const now = new Date(todayKey() + "T00:00:00");
+  for (let y = now.getFullYear(); y <= now.getFullYear() + 2; y += 1) {
+    const known = EXAM_DATES[subject][String(y)];
+    if (known) {
+      const d = new Date(known + "T00:00:00");
+      if (d >= now) return { iso: known, exact: true };
+      continue;
+    }
+    /* Micro lands on the first Tuesday of May, Macro on the first Friday. */
+    const want = subject === "micro" ? 2 : 5;
+    const d = new Date(y, 4, 1);
+    while (d.getDay() !== want) d.setDate(d.getDate() + 1);
+    if (d >= now) return { iso: d.toISOString().slice(0, 10), exact: false };
+  }
+  return { iso: `${now.getFullYear() + 1}-05-04`, exact: false };
+}
+
+const prettyDate = (iso) => new Date(iso + "T00:00:00")
+  .toLocaleDateString("en-GB", { day: "numeric", month: "long" });
 
 function useCredits() {
   const [plan, setPlan] = useLocal("equilibrium:plan", "free");
   const [log, setLog] = useLocal("equilibrium:credits", { date: todayKey(), used: 0 });
   const used = log.date === todayKey() ? log.used : 0;
-  const allowance = (PLANS[plan] || PLANS.free).credits;
+  const allowance = (PLANS[plan] || PLANS.free).equity;
   return {
     plan, setPlan, allowance,
     left: Math.max(0, allowance - used),
     spend: (n = 1) => setLog({ date: todayKey(), used: used + n }),
+  };
+}
+
+/* Questions are counted per day and full-length tests per month, so a
+   student always knows what is left before they start something. */
+function useLimits(me) {
+  const [plan] = useLocal("equilibrium:plan", "free");
+  const [tests, setTests] = useLocal("equilibrium:tests", { month: monthKey(), used: 0 });
+  const p = PLANS[plan] || PLANS.free;
+  const askedToday = (me?.days || {})[todayKey()] || 0;
+  const testsUsed = tests.month === monthKey() ? tests.used : 0;
+  return {
+    plan, perDay: p.questions, perMonth: p.tests,
+    questionsLeft: Math.max(0, p.questions - askedToday),
+    testsLeft: Math.max(0, p.tests - testsUsed),
+    useTest: () => setTests({ month: monthKey(), used: testsUsed + 1 }),
   };
 }
 
@@ -1637,13 +1686,6 @@ function streakOf(days) {
   return n;
 }
 
-/* AP exams sit in the first half of May; the date is editable on the card. */
-function defaultExamDate() {
-  const now = new Date();
-  const may = new Date(now.getFullYear(), 4, 14);
-  if (now > may) may.setFullYear(now.getFullYear() + 1);
-  return may.toISOString().slice(0, 10);
-}
 const daysUntil = (iso) => Math.max(0, Math.ceil((new Date(iso + "T00:00:00") - new Date(todayKey() + "T00:00:00")) / 86400000));
 
 /* Counts once when the dashboard mounts, as part of the entrance. */
@@ -1671,7 +1713,7 @@ function CreditChip({ nav }) {
   }
   return (
     <button className={"credchip" + (left === 0 ? " out" : "")} onClick={() => nav.go({ v: "pricing" })}>
-      <span className="dotc" /> {left} of {allowance} Equity credits left today
+      <span className="dotc" /> {left} of {allowance} Equity messages left today
     </button>
   );
 }
@@ -1679,10 +1721,13 @@ function CreditChip({ nav }) {
 function Dashboard({ bank, me, user, nav }) {
   const { go } = nav;
   const [savedIds] = useLocal("equilibrium:saved", []);
-  const [examDate, setExamDate] = useLocal("equilibrium:exam", defaultExamDate());
-  const [goal] = useLocal("equilibrium:goal", 20);
   const [last] = useLocal("equilibrium:last", null);
-  const left = daysUntil(examDate);
+  const lim = useLimits(me);
+  const exams = ["micro", "macro"].map((k) => {
+    const e = nextExam(k);
+    return { key: k, ...e, days: daysUntil(e.iso) };
+  }).sort((a, b) => a.days - b.days);
+  const goal = Math.min(20, lim.perDay);
   const doneToday = (me.days || {})[todayKey()] || 0;
   const streak = streakOf(me.days);
 
@@ -1725,16 +1770,24 @@ function Dashboard({ bank, me, user, nav }) {
 
       <div className="todaygrid">
         <div className="tcard">
-          <span className="tlab">Exam in</span>
-          <span className="tbig"><CountUp to={left} /> <small>days</small></span>
-          <input type="date" className="tdate" value={examDate}
-            onChange={(e) => setExamDate(e.target.value || defaultExamDate())} aria-label="Exam date" />
+          <span className="tlab">Next exam</span>
+          <span className="tbig"><CountUp to={exams[0].days} /> <small>days</small></span>
+          <span className="examlist">
+            {exams.map((e) => (
+              <span key={e.key}>
+                <b>{EXAM_LABEL[e.key]}</b> {prettyDate(e.iso)}
+                {e.exact ? "" : " (expected)"} · {e.days}d
+              </span>
+            ))}
+          </span>
         </div>
         <div className="tcard">
           <span className="tlab">Today's goal</span>
           <span className="tbig"><CountUp to={doneToday} /> <small>of {goal}</small></span>
           <span className="tbar"><i style={{ width: `${Math.min(100, (doneToday / goal) * 100)}%` }} /></span>
-          <span className="thint">{doneToday >= goal ? "Done for today." : `${goal - doneToday} questions to go`}</span>
+          <span className="thint">
+            {doneToday >= goal ? "Goal reached." : `${goal - doneToday} to go`} · {lim.questionsLeft} left on your plan
+          </span>
         </div>
         <div className="tcard">
           <span className="tlab">Streak</span>
@@ -2376,6 +2429,7 @@ const STATUS = [["all", "All questions"], ["unseen", "Not yet answered"], ["wron
 
 function Bank({ subject, bank, me, nav }) {
   const { go } = nav;
+  const lim = useLimits(me);
   const [status, setStatus] = useState("all");
   const [picked, setPicked] = useState([]);
 
@@ -2434,7 +2488,12 @@ function Bank({ subject, bank, me, nav }) {
         <div className="allcard">
           <div>
             <h3>Choose what to practise</h3>
-            <p>{total ? "Tick one or more topics below, or open a single topic on its own." : "No questions here yet."}</p>
+            <p>
+              {total ? "Tick one or more topics below, or open a single topic on its own." : "No questions here yet."}
+              {lim.questionsLeft === 0
+                ? " You have used today's questions — they reset in the morning."
+                : ` ${lim.questionsLeft} of ${lim.perDay} questions left today.`}
+            </p>
           </div>
         </div>
 
@@ -2445,8 +2504,11 @@ function Bank({ subject, bank, me, nav }) {
               {picked.length} topic{picked.length === 1 ? "" : "s"}: {picked.slice().sort((a, b) => parseFloat(a) - parseFloat(b)).join(", ")}
             </span>
             <span style={{ flex: 1 }} />
+            <span className="hint">{lim.questionsLeft} left today</span>
             <button className="btn ghost sm" onClick={() => setPicked([])}>Clear</button>
-            <button className="btn acc sm" onClick={startPicked}>Start practice</button>
+            {lim.questionsLeft === 0
+              ? <button className="btn acc sm" onClick={() => go({ v: "pricing" })}>Daily limit reached</button>
+              : <button className="btn acc sm" onClick={startPicked}>Start practice</button>}
           </div>
         )}
 
@@ -2766,17 +2828,17 @@ function Pricing({ nav }) {
   const yearly = cycle === "yearly";
 
   const rows = [
-    ["Question bank", "20 a day", "Unlimited", "Unlimited"],
-    ["Full-length tests", "1", "Unlimited", "Unlimited"],
+    ["Questions", "20 a day", "50 a day", "100 a day"],
+    ["Full-length tests", "1 a month", "20 a month", "30 a month"],
+    ["Equity AI tutor", "—", "20 messages a day", "50 messages a day"],
     ["Saved and mistakes", "20 questions", "Unlimited", "Unlimited"],
     ["Analytics and planner", "—", "Yes", "Yes"],
-    ["Equity AI tutor", "—", "12 a day", "30 a day"],
     ["Deep explanations", "—", "—", "Yes"],
   ];
   const tiers = [
-    { k: "free", tag: "", blurb: "The question bank, a day at a time." },
-    { k: "pro", tag: "Most Popular", blurb: "Unlimited practice, Equity every day." },
-    { k: "max", tag: "", blurb: "For the months before the exam." },
+    { k: "free", tag: "", blurb: "Enough to see whether the bank suits you." },
+    { k: "pro", tag: "Most Popular", blurb: "Daily practice with Equity on hand." },
+    { k: "max", tag: "", blurb: "Twice the practice for the final months." },
   ];
 
   return (
@@ -2827,7 +2889,7 @@ function Pricing({ nav }) {
       </div>
 
       <p className="hint" style={{ textAlign: "center", marginTop: 26 }}>
-        One Equity credit is one answer from the tutor. Credits reset every morning.
+Questions and Equity messages reset every morning; tests reset on the first of the month.
       </p>
       <div style={{ height: 60 }} />
     </div>
@@ -3056,10 +3118,13 @@ function Planner({ bank, me, nav }) {
 
 /* ---------------------------- full-length test picker ---------------------------- */
 
-function Tests({ bank, nav }) {
+function Tests({ bank, me, nav }) {
   const { go } = nav;
   const [, force] = useState(0);
+  const lim = useLimits(me);
   const startTest = (subject) => {
+    if (lim.testsLeft === 0) return go({ v: "pricing" });
+    lim.useTest();
     clearSavedTest(subject);
     const p = buildMock(bank.questions, subject);
     if (p.length >= 5) go({ v: "mock", subject, pool: p });
@@ -3075,7 +3140,10 @@ function Tests({ bank, nav }) {
       <div className="phead" style={{ paddingTop: 30 }}>
         <div>
           <h1>Full-length test</h1>
-          <div className="sub">A timed multiple-choice paper drawn in College Board unit proportions, then a score report with a predicted 1 to 5.</div>
+          <div className="sub">
+            A timed multiple-choice paper drawn in College Board unit proportions, then a score report with a predicted 1 to 5.
+            {" "}{lim.testsLeft} of {lim.perMonth} test{lim.perMonth === 1 ? "" : "s"} left this month.
+          </div>
         </div>
       </div>
       {["micro", "macro"].map((sub) => {
@@ -3108,7 +3176,8 @@ function Tests({ bank, nav }) {
               }
               return (
                 <button className="btn" onClick={() => startTest(sub)} disabled={n < 5}>
-                  {n < 5 ? "Needs at least 5 questions" : "Start the test"}
+                  {n < 5 ? "Needs at least 5 questions"
+                    : lim.testsLeft === 0 ? "No tests left this month" : "Start the test"}
                 </button>
               );
             })()}
